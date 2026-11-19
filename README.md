@@ -48,16 +48,7 @@ The first version will focus on the following essential features:
 | Date   | Milestone                      | Status |
 | ------ | ------------------------------ | ------ |
 | Nov 17 | Project setup and architecture | ✅     |
-| Nov 18 | Database and authentication    | ⬜     |
-| Nov 19 | Master data and BOM            | ⬜     |
-| Nov 20 | Inventory and stock ledger     | ⬜     |
-| Nov 21 | Production and variance        | ⬜     |
-| Nov 22 | Sales order management         | ⬜     |
-| Nov 23 | GST invoice and dispatch       | ⬜     |
-| Nov 24 | Payments and costing           | ⬜     |
-| Nov 25 | Dashboard and reports          | ⬜     |
-| Nov 26 | Integration and testing        | ⬜     |
-| Nov 27 | Documentation and submission   | ⬜     |
+| Nov 18 | Database                       | ✅     |
 
 **Status legend:** ⬜ Not started · 🟡 In progress · ✅ Completed
 
