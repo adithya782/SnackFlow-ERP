@@ -24,3 +24,5 @@ from app.models.dispatch import Dispatch
 from app.models.payment import Payment
 from app.models.payment_allocation import PaymentAllocation
 from app.models.audit_log import AuditLog
+
+from app.models.company_settings import CompanySettings
