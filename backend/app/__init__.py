@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from flask_migrate import Migrate # type: ignore
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 
@@ -27,5 +27,8 @@ def create_app():
             "status": "success",
             "message": "SnackFlow ERP backend is running!"
         }), 200
+
+    from app.routes.auth import auth_bp
+    app.register_blueprint(auth_bp)
 
     return app
