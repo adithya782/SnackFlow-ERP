@@ -16,7 +16,7 @@
       <div class="menu-label">MANAGEMENT</div>
 
       <RouterLink
-        v-for="item in modules"
+        v-for="item in visibleModules"
         :key="item.path"
         :to="`/modules/${item.path}`"
         class="nav-link"
@@ -31,6 +31,7 @@
           <div class="user-avatar">
             {{ user?.name?.charAt(0)?.toUpperCase() || "U" }}
           </div>
+
           <div>
             <strong>{{ user?.name || "User" }}</strong>
             <small>{{ user?.role || "Employee" }}</small>
@@ -50,7 +51,9 @@
 
         <span class="topbar-title">SnackFlow ERP</span>
 
-        <span class="role-badge">{{ user?.role || "User" }}</span>
+        <span class="role-badge">
+          {{ user?.role || "User" }}
+        </span>
       </header>
 
       <main class="page-content">
@@ -67,7 +70,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { RouterLink, RouterView, useRouter } from "vue-router";
 
 const router = useRouter();
@@ -76,21 +79,89 @@ const sidebarOpen = ref(false);
 const user = ref(JSON.parse(localStorage.getItem("user") || "null"));
 
 const modules = [
-  { name: "Items", path: "items", icon: "📦" },
-  { name: "Customers", path: "customers", icon: "👥" },
-  { name: "Suppliers", path: "suppliers", icon: "🏭" },
-  { name: "Inventory", path: "inventory", icon: "🗃️" },
-  { name: "Purchases", path: "purchases", icon: "🛒" },
-  { name: "Production", path: "production", icon: "⚙️" },
-  { name: "Sales Orders", path: "sales-orders", icon: "📋" },
-  { name: "Invoices", path: "invoices", icon: "🧾" },
-  { name: "Dispatches", path: "dispatches", icon: "🚚" },
-  { name: "Payments", path: "payments", icon: "💰" },
-  { name: "Reports", path: "reports", icon: "📊" },
+  {
+    name: "Items",
+    path: "items",
+    icon: "📦",
+    roles: ["ADMIN"],
+  },
+  {
+    name: "Customers",
+    path: "customers",
+    icon: "👥",
+    roles: ["ADMIN", "SALESMAN"],
+  },
+  {
+    name: "Suppliers",
+    path: "suppliers",
+    icon: "🏭",
+    roles: ["ADMIN"],
+  },
+  {
+    name: "Inventory",
+    path: "inventory",
+    icon: "🗃️",
+    roles: ["ADMIN", "PRODUCTION"],
+  },
+  {
+    name: "Purchases",
+    path: "purchases",
+    icon: "🛒",
+    roles: ["ADMIN"],
+  },
+  {
+    name: "Production",
+    path: "production",
+    icon: "⚙️",
+    roles: ["ADMIN", "PRODUCTION"],
+  },
+  {
+    name: "Sales Orders",
+    path: "sales-orders",
+    icon: "📋",
+    roles: ["ADMIN", "SALESMAN"],
+  },
+  {
+    name: "Invoices",
+    path: "invoices",
+    icon: "🧾",
+    roles: ["ADMIN", "ACCOUNTANT"],
+  },
+  {
+    name: "Dispatches",
+    path: "dispatches",
+    icon: "🚚",
+    roles: ["ADMIN"],
+  },
+  {
+    name: "Payments",
+    path: "payments",
+    icon: "💰",
+    roles: ["ADMIN", "ACCOUNTANT"],
+  },
+  {
+    name: "Reports",
+    path: "reports",
+    icon: "📊",
+    roles: ["ADMIN", "ACCOUNTANT"],
+  },
+  {
+    name: "Employees",
+    path: "employees",
+    icon: "👨‍💼",
+    roles: ["ADMIN"],
+  },
 ];
+
+const visibleModules = computed(() => {
+  const role = user.value?.role;
+
+  return modules.filter((item) => item.roles.includes(role));
+});
 
 function logout() {
   localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
   localStorage.removeItem("user");
   router.push("/login");
 }

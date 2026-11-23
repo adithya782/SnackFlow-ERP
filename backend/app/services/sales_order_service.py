@@ -147,13 +147,14 @@ def create_sales_order(data, user_id):
     return sales_order
 
 
-def submit_sales_order(order_id, user_id):
+def submit_sales_order(order_id, user_id, user_role):
     sales_order = db.session.get(SalesOrder, order_id)
 
     if not sales_order:
         raise ValueError("Sales order not found.")
 
-    if sales_order.salesman_id != user_id:
+    
+    if user_role == "SALESMAN" and sales_order.salesman_id != user_id:
         raise ValueError("You can only submit your own orders.")
 
     if sales_order.status != "DRAFT":
@@ -171,7 +172,6 @@ def submit_sales_order(order_id, user_id):
     db.session.flush()
 
     return sales_order
-
 
 def review_sales_order(order_id, user_id, decision):
     sales_order = db.session.get(SalesOrder, order_id)

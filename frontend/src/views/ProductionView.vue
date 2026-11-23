@@ -6,12 +6,24 @@ const productionRuns = ref([]);
 const boms = ref([]);
 const loading = ref(true);
 const saving = ref(false);
+const completingRunId = ref(null);
+
 const showModal = ref(false);
+const showActualsModal = ref(false);
+
 const error = ref("");
+const modalError = ref("");
+
+const selectedRun = ref(null);
 
 const form = ref({
   bom_id: "",
   planned_output: "",
+});
+
+const actualForm = ref({
+  actual_output: "",
+  consumptions: [],
 });
 
 const selectedBom = computed(() =>
@@ -70,7 +82,7 @@ function openModal() {
 
 async function createProductionRun() {
   saving.value = true;
-  error.value = "";
+  modalError.value = "";
 
   try {
     await api.post("/production/runs", {
@@ -81,10 +93,103 @@ async function createProductionRun() {
     showModal.value = false;
     await fetchProduction();
   } catch (err) {
-    error.value =
+    modalError.value =
       err.response?.data?.message || "Failed to create production run.";
   } finally {
     saving.value = false;
+  }
+}
+
+// Open actual production entry modal
+function openActuals(run) {
+  selectedRun.value = run;
+
+  actualForm.value = {
+    actual_output: run.actual_output || run.planned_output,
+    consumptions: run.materials.map((material) => ({
+      material_item_id: material.material_item_id,
+      material_name: material.material_name,
+      unit: material.unit,
+      planned_quantity: material.planned_quantity,
+      actual_quantity: material.actual_quantity || material.planned_quantity,
+    })),
+  };
+
+  modalError.value = "";
+  showActualsModal.value = true;
+}
+
+// Save actual output and material consumption
+async function saveActuals() {
+  if (!selectedRun.value) return;
+
+  const output = Number(actualForm.value.actual_output);
+
+  if (!Number.isFinite(output) || output <= 0) {
+    modalError.value = "Actual output must be greater than zero.";
+    return;
+  }
+
+  for (const material of actualForm.value.consumptions) {
+    const quantity = Number(material.actual_quantity);
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      modalError.value = `Enter a valid actual quantity for ${material.material_name}.`;
+      return;
+    }
+  }
+
+  saving.value = true;
+  modalError.value = "";
+
+  try {
+    await api.put(`/production/runs/${selectedRun.value.id}/actuals`, {
+      actual_output: output,
+      consumptions: actualForm.value.consumptions.map((material) => ({
+        material_item_id: material.material_item_id,
+        actual_quantity: Number(material.actual_quantity),
+      })),
+    });
+
+    showActualsModal.value = false;
+    selectedRun.value = null;
+
+    await fetchProduction();
+  } catch (err) {
+    modalError.value =
+      err.response?.data?.message ||
+      "Failed to save actual production details.";
+  } finally {
+    saving.value = false;
+  }
+}
+
+// Complete production and update inventory
+async function completeProduction(run) {
+  const confirmed = window.confirm(
+    `Complete production run ${run.run_number}? This will consume raw materials and add finished goods to inventory.`,
+  );
+
+  if (!confirmed) return;
+
+  completingRunId.value = run.id;
+  error.value = "";
+
+  try {
+    const response = await api.post(`/production/runs/${run.id}/complete`);
+
+    alert(
+      response.data.message +
+        "\nTotal Material Cost: ₹" +
+        Number(response.data.total_material_cost).toFixed(2),
+    );
+
+    await fetchProduction();
+  } catch (err) {
+    error.value =
+      err.response?.data?.message || "Failed to complete production.";
+  } finally {
+    completingRunId.value = null;
   }
 }
 
@@ -130,8 +235,8 @@ onMounted(async () => {
       </button>
     </div>
 
-    <!-- Error Message -->
-    <div v-if="error && !showModal" class="alert alert-danger">
+    <!-- Page Error -->
+    <div v-if="error" class="alert alert-danger">
       {{ error }}
     </div>
 
@@ -160,6 +265,7 @@ onMounted(async () => {
                 <th>Actual Output</th>
                 <th>Materials</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
 
@@ -175,14 +281,43 @@ onMounted(async () => {
 
                 <td>{{ run.actual_output ?? "-" }}</td>
 
-                <td>
-                  {{ run.consumptions?.length ?? "-" }}
-                </td>
+                <td>{{ run.materials?.length ?? 0 }}</td>
 
                 <td>
                   <span class="badge" :class="statusClass(run.status)">
                     {{ run.status }}
                   </span>
+                </td>
+
+                <td>
+                  <button
+                    v-if="run.status === 'PLANNED'"
+                    class="btn btn-sm btn-outline-primary"
+                    @click="openActuals(run)"
+                  >
+                    Record Actuals
+                  </button>
+
+                  <button
+                    v-else-if="run.status === 'IN_PROGRESS'"
+                    class="btn btn-sm btn-success"
+                    :disabled="completingRunId === run.id"
+                    @click="completeProduction(run)"
+                  >
+                    {{
+                      completingRunId === run.id ? "Completing..." : "Complete"
+                    }}
+                  </button>
+
+                  <span
+                    v-else-if="run.status === 'COMPLETED'"
+                    class="text-success small fw-semibold"
+                  >
+                    <i class="bi bi-check-circle"></i>
+                    Completed
+                  </span>
+
+                  <span v-else class="text-muted small"> No actions </span>
                 </td>
               </tr>
             </tbody>
@@ -210,7 +345,6 @@ onMounted(async () => {
         </div>
 
         <form @submit.prevent="createProductionRun">
-          <!-- BOM Selection -->
           <div class="mb-3">
             <label class="form-label fw-semibold"> Bill of Materials </label>
 
@@ -223,7 +357,6 @@ onMounted(async () => {
             </select>
           </div>
 
-          <!-- Planned Output -->
           <div class="mb-3">
             <label class="form-label fw-semibold">
               Planned Output (Packets)
@@ -240,7 +373,6 @@ onMounted(async () => {
             />
           </div>
 
-          <!-- Material Preview -->
           <div v-if="plannedMaterials.length" class="mb-4">
             <h6 class="fw-bold mb-3">Estimated Material Requirements</h6>
 
@@ -273,12 +405,10 @@ onMounted(async () => {
             </p>
           </div>
 
-          <!-- Modal Error -->
-          <div v-if="error" class="alert alert-danger">
-            {{ error }}
+          <div v-if="modalError" class="alert alert-danger">
+            {{ modalError }}
           </div>
 
-          <!-- Actions -->
           <div class="d-flex justify-content-end gap-2">
             <button
               type="button"
@@ -299,6 +429,117 @@ onMounted(async () => {
               "
             >
               {{ saving ? "Creating..." : "Create Production Run" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Actual Production Modal -->
+    <div v-if="showActualsModal" class="production-overlay">
+      <div class="production-modal actuals-modal">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h5 class="fw-bold mb-1">Record Actual Production</h5>
+            <p class="text-muted small mb-0">
+              {{ selectedRun?.run_number }}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            class="btn-close"
+            @click="showActualsModal = false"
+          ></button>
+        </div>
+
+        <form @submit.prevent="saveActuals">
+          <div class="mb-4">
+            <label class="form-label fw-semibold">
+              Actual Output (Packets)
+            </label>
+
+            <input
+              v-model="actualForm.actual_output"
+              type="number"
+              min="0.001"
+              step="0.001"
+              class="form-control"
+              required
+            />
+
+            <small class="text-muted">
+              Planned output: {{ selectedRun?.planned_output }} packets
+            </small>
+          </div>
+
+          <h6 class="fw-bold mb-3">Actual Material Consumption</h6>
+
+          <div class="table-responsive mb-3">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>Material</th>
+                  <th>Planned</th>
+                  <th>Actual Quantity</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr
+                  v-for="material in actualForm.consumptions"
+                  :key="material.material_item_id"
+                >
+                  <td>
+                    <div class="fw-semibold">
+                      {{ material.material_name }}
+                    </div>
+                    <small class="text-muted">
+                      {{ material.unit }}
+                    </small>
+                  </td>
+
+                  <td>
+                    {{ material.planned_quantity }}
+                    {{ material.unit }}
+                  </td>
+
+                  <td>
+                    <input
+                      v-model="material.actual_quantity"
+                      type="number"
+                      min="0.001"
+                      step="0.001"
+                      class="form-control form-control-sm actual-input"
+                      required
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="alert alert-info small">
+            Review the actual quantities carefully. Completing production will
+            deduct these materials from inventory and add the actual output to
+            finished goods stock.
+          </div>
+
+          <div v-if="modalError" class="alert alert-danger">
+            {{ modalError }}
+          </div>
+
+          <div class="d-flex justify-content-end gap-2">
+            <button
+              type="button"
+              class="btn btn-light"
+              @click="showActualsModal = false"
+            >
+              Cancel
+            </button>
+
+            <button type="submit" class="btn btn-primary" :disabled="saving">
+              {{ saving ? "Saving..." : "Save Actuals" }}
             </button>
           </div>
         </form>
@@ -330,8 +571,16 @@ onMounted(async () => {
   padding: 24px;
 }
 
+.actuals-modal {
+  max-width: 760px;
+}
+
 .production-modal .form-label {
   color: #343a40;
   font-size: 14px;
+}
+
+.actual-input {
+  min-width: 110px;
 }
 </style>

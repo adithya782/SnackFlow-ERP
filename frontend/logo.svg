@@ -1,0 +1,33 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFE39A"></stop>
+      <stop offset="100%" stop-color="#D99A32"></stop>
+    </linearGradient>
+  </defs>
+
+  <!-- Brand background -->
+  <rect width="100" height="100" rx="23" fill="#173B2B"></rect>
+
+  <!-- Murukku-inspired spiral -->
+  <path d="M50 18
+       C68 18 82 32 82 50
+       C82 68 68 82 50 82
+       C32 82 18 68 18 50
+       C18 35 29 24 43 24
+       C57 24 68 35 68 50
+       C68 61 60 69 50 69
+       C41 69 34 62 34 53
+       C34 45 40 39 48 39
+       C55 39 60 44 60 51" fill="none" stroke="url(#gold)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"></path>
+
+  <!-- Snack texture accents -->
+  <circle cx="50" cy="18" r="3" fill="#FFF0C2"></circle>
+  <circle cx="82" cy="50" r="3" fill="#FFF0C2"></circle>
+  <circle cx="50" cy="82" r="3" fill="#FFF0C2"></circle>
+  <circle cx="18" cy="50" r="3" fill="#FFF0C2"></circle>
+
+  <!-- Small finishing accent -->
+  <circle cx="60" cy="51" r="4" fill="#FFF0C2"></circle>
+</svg>

@@ -1,5 +1,6 @@
+
 from flask import Blueprint, jsonify, request
-from flask_jwt_extended import get_jwt_identity, jwt_required
+from flask_jwt_extended import get_jwt, get_jwt_identity, jwt_required
 
 from app import db
 from app.models.sales_order import SalesOrder
@@ -17,6 +18,7 @@ sales_orders_bp = Blueprint(
     __name__,
     url_prefix="/api/sales-orders"
 )
+
 
 def serialize_sales_order_item(item):
     return {
@@ -63,11 +65,24 @@ def serialize_sales_order(order):
         ]
     }
 
+
+# GET ALL SALES ORDERS
+# Admin and Accountant: all orders
+# Salesman: only their own orders
+
 @sales_orders_bp.route("", methods=["GET"])
 @jwt_required()
 @role_required("ADMIN", "SALESMAN", "ACCOUNTANT")
 def get_sales_orders():
-    orders = SalesOrder.query.order_by(
+    user_id = int(get_jwt_identity())
+    role = get_jwt().get("role")
+
+    query = SalesOrder.query
+
+    if role == "SALESMAN":
+        query = query.filter_by(salesman_id=user_id)
+
+    orders = query.order_by(
         SalesOrder.id.desc()
     ).all()
 
@@ -80,10 +95,16 @@ def get_sales_orders():
         ]
     }), 200
 
+
+# GET SINGLE SALES ORDER
+
 @sales_orders_bp.route("/<int:order_id>", methods=["GET"])
 @jwt_required()
 @role_required("ADMIN", "SALESMAN", "ACCOUNTANT")
 def get_sales_order(order_id):
+    user_id = int(get_jwt_identity())
+    role = get_jwt().get("role")
+
     order = db.session.get(SalesOrder, order_id)
 
     if not order:
@@ -92,11 +113,19 @@ def get_sales_order(order_id):
             "message": "Sales order not found."
         }), 404
 
+    if role == "SALESMAN" and order.salesman_id != user_id:
+        return jsonify({
+            "status": "error",
+            "message": "You cannot access another salesman's order."
+        }), 403
+
     return jsonify({
         "status": "success",
         "sales_order": serialize_sales_order(order)
     }), 200
 
+
+# CREATE SALES ORDER
 
 @sales_orders_bp.route("", methods=["POST"])
 @jwt_required()
@@ -134,14 +163,17 @@ def add_sales_order():
         }), 500
 
 
+# SUBMIT SALES ORDER
+
 @sales_orders_bp.route("/<int:order_id>/submit", methods=["POST"])
 @jwt_required()
 @role_required("ADMIN", "SALESMAN")
 def submit_sales_order_route(order_id):
     try:
         user_id = int(get_jwt_identity())
+        user_role = get_jwt().get("role")
 
-        order = submit_sales_order(order_id, user_id)
+        order = submit_sales_order(order_id, user_id, user_role)
 
         db.session.commit()
 
@@ -167,6 +199,7 @@ def submit_sales_order_route(order_id):
             "message": "An unexpected error occurred while submitting the sales order."
         }), 500
 
+# APPROVE SALES ORDER
 
 @sales_orders_bp.route("/<int:order_id>/approve", methods=["POST"])
 @jwt_required()
@@ -204,6 +237,9 @@ def approve_sales_order_route(order_id):
             "status": "error",
             "message": "An unexpected error occurred while approving the sales order."
         }), 500
+
+
+# REJECT SALES ORDER
 
 @sales_orders_bp.route("/<int:order_id>/reject", methods=["POST"])
 @jwt_required()
