@@ -7,11 +7,10 @@ const sales = ref(null);
 const production = ref(null);
 const receivables = ref(null);
 const customers = ref([]);
-
 const loading = ref(false);
 const error = ref("");
-
 const activeTab = ref("receivables");
+const exporting = ref("");
 
 const tabs = [
   { id: "receivables", label: "Receivables" },
@@ -63,6 +62,44 @@ const loadReports = async () => {
       "Unable to load reports. Check your login permissions.";
   } finally {
     loading.value = false;
+  }
+};
+
+const downloadReport = async (reportType, fileFormat) => {
+  const exportKey = `${reportType}-${fileFormat}`;
+  exporting.value = exportKey;
+  error.value = "";
+
+  try {
+    const response = await api.get(
+      `/reports/${reportType}/export/${fileFormat}`,
+      { responseType: "blob" },
+    );
+
+    const mimeType =
+      fileFormat === "xlsx"
+        ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        : "text/csv;charset=utf-8";
+
+    const blob = new Blob([response.data], { type: mimeType });
+    const downloadUrl = window.URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download =
+      reportType === "inventory"
+        ? `SnackFlow_Stock_Report.${fileFormat}`
+        : `SnackFlow_Sales_Register.${fileFormat}`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    window.URL.revokeObjectURL(downloadUrl);
+  } catch (err) {
+    error.value = `Unable to download the ${reportType} report. Please try again.`;
+  } finally {
+    exporting.value = "";
   }
 };
 
@@ -126,7 +163,6 @@ onMounted(loadReports);
 
     <template v-else-if="receivables && sales && production">
       <!-- SUMMARY CARDS -->
-
       <div class="summary-grid">
         <div class="summary-card">
           <span>Total Sales</span>
@@ -156,7 +192,6 @@ onMounted(loadReports);
       </div>
 
       <!-- REPORT NAVIGATION -->
-
       <div class="report-navigation">
         <button
           v-for="tab in tabs"
@@ -169,7 +204,6 @@ onMounted(loadReports);
       </div>
 
       <!-- RECEIVABLES REPORT -->
-
       <div v-if="activeTab === 'receivables'" class="report-card">
         <div class="report-heading">
           <div>
@@ -181,9 +215,7 @@ onMounted(loadReports);
         <div class="financial-summary">
           <div>
             <span>Total Invoiced</span>
-            <strong>
-              {{ formatCurrency(receivables.total_invoiced) }}
-            </strong>
+            <strong>{{ formatCurrency(receivables.total_invoiced) }}</strong>
           </div>
 
           <div>
@@ -233,22 +265,15 @@ onMounted(loadReports);
                 v-for="invoice in receivables.invoices"
                 :key="invoice.invoice_id"
               >
-                <td class="fw-semibold">
-                  {{ invoice.invoice_number }}
-                </td>
-
+                <td class="fw-semibold">{{ invoice.invoice_number }}</td>
                 <td>{{ invoice.customer_name || "Unknown" }}</td>
-
                 <td>{{ formatCurrency(invoice.invoice_total) }}</td>
-
                 <td class="paid-number">
                   {{ formatCurrency(invoice.paid_amount) }}
                 </td>
-
                 <td class="outstanding-number">
                   {{ formatCurrency(invoice.outstanding_amount) }}
                 </td>
-
                 <td>
                   <span
                     class="status-badge"
@@ -270,12 +295,29 @@ onMounted(loadReports);
       </div>
 
       <!-- SALES REPORT -->
-
       <div v-if="activeTab === 'sales'" class="report-card">
         <div class="report-heading">
           <div>
             <h4>Sales Report</h4>
             <p>Overview of issued invoices and sales revenue.</p>
+          </div>
+
+          <div class="export-actions">
+            <button
+              class="btn-export"
+              :disabled="!!exporting"
+              @click="downloadReport('sales', 'xlsx')"
+            >
+              {{ exporting === "sales-xlsx" ? "Preparing..." : "↓ Excel" }}
+            </button>
+
+            <button
+              class="btn-export btn-export-secondary"
+              :disabled="!!exporting"
+              @click="downloadReport('sales', 'csv')"
+            >
+              {{ exporting === "sales-csv" ? "Preparing..." : "↓ CSV" }}
+            </button>
           </div>
         </div>
 
@@ -310,18 +352,12 @@ onMounted(loadReports);
 
             <tbody>
               <tr v-for="invoice in sales.invoices" :key="invoice.invoice_id">
-                <td class="fw-semibold">
-                  {{ invoice.invoice_number }}
-                </td>
-
+                <td class="fw-semibold">{{ invoice.invoice_number }}</td>
                 <td>
                   {{ customerMap[invoice.customer_id] || "Unknown" }}
                 </td>
-
                 <td>{{ formatDate(invoice.invoice_date) }}</td>
-
                 <td>{{ formatCurrency(invoice.total_amount) }}</td>
-
                 <td>
                   <span class="status-badge paid">
                     {{ invoice.status }}
@@ -338,12 +374,29 @@ onMounted(loadReports);
       </div>
 
       <!-- INVENTORY REPORT -->
-
       <div v-if="activeTab === 'inventory'" class="report-card">
         <div class="report-heading">
           <div>
             <h4>Inventory Report</h4>
             <p>Current stock levels and reorder requirements.</p>
+          </div>
+
+          <div class="export-actions">
+            <button
+              class="btn-export"
+              :disabled="!!exporting"
+              @click="downloadReport('inventory', 'xlsx')"
+            >
+              {{ exporting === "inventory-xlsx" ? "Preparing..." : "↓ Excel" }}
+            </button>
+
+            <button
+              class="btn-export btn-export-secondary"
+              :disabled="!!exporting"
+              @click="downloadReport('inventory', 'csv')"
+            >
+              {{ exporting === "inventory-csv" ? "Preparing..." : "↓ CSV" }}
+            </button>
           </div>
         </div>
 
@@ -355,9 +408,7 @@ onMounted(loadReports);
 
           <div>
             <span>Low Stock Items</span>
-            <strong class="outstanding-number">
-              {{ lowStockCount }}
-            </strong>
+            <strong class="outstanding-number">{{ lowStockCount }}</strong>
           </div>
 
           <div>
@@ -388,7 +439,6 @@ onMounted(loadReports);
                 <td>{{ item.category.replace("_", " ") }}</td>
                 <td>{{ item.current_stock }} {{ item.unit }}</td>
                 <td>{{ item.reorder_level }} {{ item.unit }}</td>
-
                 <td>
                   <span
                     class="status-badge"
@@ -404,7 +454,6 @@ onMounted(loadReports);
       </div>
 
       <!-- PRODUCTION REPORT -->
-
       <div v-if="activeTab === 'production'" class="report-card">
         <div class="report-heading">
           <div>
@@ -426,9 +475,7 @@ onMounted(loadReports);
 
           <div>
             <span>Other Runs</span>
-            <strong>
-              {{ production.total_runs - completedRuns }}
-            </strong>
+            <strong>{{ production.total_runs - completedRuns }}</strong>
           </div>
         </div>
 
@@ -457,7 +504,6 @@ onMounted(loadReports);
                 <td>{{ run.actual_output ?? "-" }}</td>
                 <td>{{ formatCurrency(run.material_cost) }}</td>
                 <td>{{ formatCurrency(run.cost_per_unit) }}</td>
-
                 <td>
                   <span
                     class="status-badge"
@@ -592,6 +638,11 @@ onMounted(loadReports);
 }
 
 .report-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
   margin-bottom: 22px;
 }
 
@@ -600,6 +651,41 @@ onMounted(loadReports);
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 5px;
+}
+
+.export-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-export {
+  border: 1px solid #176b45;
+  background: #176b45;
+  color: white;
+  border-radius: 7px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+.btn-export:hover:not(:disabled) {
+  background: #105536;
+}
+
+.btn-export-secondary {
+  background: white;
+  color: #176b45;
+}
+
+.btn-export-secondary:hover:not(:disabled) {
+  background: #f0f7f2;
+}
+
+.btn-export:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .financial-summary {
@@ -712,6 +798,11 @@ onMounted(loadReports);
 
   .financial-summary {
     grid-template-columns: 1fr;
+  }
+
+  .report-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
 </style>
