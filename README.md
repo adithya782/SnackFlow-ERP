@@ -1,87 +1,162 @@
-# SnackFlow ERP
+# 🥨 SnackFlow ERP
 
-### Manufacturing Management System
+![Vue](https://img.shields.io/badge/Vue.js-3-42b883?logo=vuedotjs)
+![Flask](https://img.shields.io/badge/Flask-3-black?logo=flask)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-4169e1?logo=postgresql)
+![Render](https://img.shields.io/badge/Deployed-Render-46e3b7?logo=render)
 
-**SnackFlow ERP** is a web-based Enterprise Resource Planning system designed for small and medium-sized snack manufacturing businesses.
+### Manufacturing & Business Management System
 
-It brings inventory, procurement, production, sales, invoicing, dispatch and payments together in one centralized platform.
+A role-based Enterprise Resource Planning (ERP) system designed for small-scale snack manufacturers. SnackFlow streamlines business operations by connecting inventory, procurement, production, sales, invoicing, dispatch, payments, and reporting in one platform.
 
-The goal is simple: manage the complete journey from raw materials to finished products and customer payments.
-
----
-
-## 1. About the Project
-
-SnackFlow addresses common challenges faced by small manufacturing businesses:
-
-- Disconnected records across different departments.
-- Difficulty tracking raw materials and finished goods.
-- Manual production and material consumption tracking.
-- Complicated sales order and invoice management.
-- Difficulty monitoring customer payments and outstanding balances.
-
-SnackFlow connects these operations through a single application with role-based access.
-
-### Key Features
-
-| Module                | Functionality                                |
-| --------------------- | -------------------------------------------- |
-| Dashboard             | Role-specific business overview              |
-| Items                 | Manage products and materials                |
-| Customers & Suppliers | Maintain business records                    |
-| Inventory             | Track stock and movements                    |
-| Purchases             | Record and receive materials                 |
-| Production            | Manage BOM-based manufacturing               |
-| Sales Orders          | Create and approve customer orders           |
-| Invoices              | Generate and issue invoices                  |
-| Dispatches            | Manage product deliveries                    |
-| Payments              | Record and allocate customer payments        |
-| Reports               | Inventory, sales, production and receivables |
-| Employees             | Manage employee accounts and access          |
+<p align="center">
+  <img src="frontend/1f968.svg" alt="SnackFlow Logo" width="100" />
+</p>
+<p align="center">
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&size=22&pause=1000&color=36BCF7&center=true&vCenter=true&width=600&lines=Smart+Manufacturing+Management;Inventory+%7C+Production+%7C+Sales;Welcome+to+SnackFlow+ERP!" />
+</p>
 
 ---
 
-## 2. Technology Stack
+## 🚀 Live Demo
 
-| Layer               | Technologies                   |
-| ------------------- | ------------------------------ |
-| Frontend            | Vue 3, JavaScript, Bootstrap 5 |
-| Build Tool          | Vite                           |
-| Backend             | Python, Flask                  |
-| Database            | PostgreSQL                     |
-| ORM                 | Flask-SQLAlchemy               |
-| Authentication      | Flask-JWT-Extended             |
-| Database Migrations | Flask-Migrate                  |
-| API Communication   | Axios                          |
-| PDF Generation      | ReportLab                      |
+| Component               | Link                                                             |
+| ----------------------- | ---------------------------------------------------------------- |
+| 🌐 Frontend Application | [SnackFlow ERP](https://snackflow-frontend.onrender.com/)        |
+| ⚙️ Backend Health Check | [API Status](https://snackflow-erp-jyjh.onrender.com/api/health) |
+
+> **Note:** The application is hosted on Render's free tier. The backend may take a little time to wake up after inactivity.
 
 ---
 
-## 3. System Architecture
+## ✨ Features
 
-SnackFlow follows a frontend-backend architecture.
+### 📦 Inventory Management
+
+- Manage raw materials and finished goods.
+- Track available stock and stock movements.
+- Monitor material consumption and finished product availability.
+
+### 🛒 Procurement
+
+- Manage suppliers and purchase orders.
+- Record received materials.
+- Automatically update raw material inventory.
+
+### 🏭 Production Management
+
+- Create and manage Bills of Materials (BOMs).
+- Plan production based on material requirements.
+- Record actual material consumption and production output.
+- Track production variance and product costs.
+
+### 💼 Sales Management
+
+- Manage customers and sales orders.
+- Submit, approve, or reject orders.
+- Track order ownership and status.
+
+### 🧾 Invoicing & Dispatch
+
+- Generate invoices and downloadable PDF documents.
+- Manage dispatch records.
+- Track finished goods dispatched against sales orders.
+
+### 💰 Payments & Finance
+
+- Record customer payments.
+- Allocate payments against invoices.
+- Monitor outstanding balances and receivables.
+
+### 📊 Reports & Dashboard
+
+- Sales reports.
+- Inventory reports.
+- Production reports.
+- Receivables reports.
+- Role-specific dashboards.
+
+### 🔐 Authentication & Access Control
+
+- JWT-based authentication.
+- Role-based access control (RBAC).
+- Access and refresh token handling.
+- User management and account activation controls.
+
+---
+
+## 👥 User Roles
+
+| Role          | Responsibilities                                  |
+| ------------- | ------------------------------------------------- |
+| 👑 Admin      | Complete system management and access control     |
+| 🛍️ Salesman   | Customer management and sales order creation      |
+| 🏭 Production | Production planning, BOMs, and production records |
+| 💳 Accountant | Invoices, payments, and financial reports         |
+
+---
+
+## 🏗️ System Architecture
 
 ```mermaid
 flowchart TD
-    U[Employees] --> F[Vue 3 Frontend]
-    F --> A[Axios API Service]
-    A --> B[Flask Backend]
-    B --> AUTH[Authentication & Permissions]
-    AUTH --> R[Application Routes]
-    R --> S[Business Logic / Services]
-    S --> M[SQLAlchemy Models]
-    M --> DB[(PostgreSQL Database)]
+    A["👤 User"] --> B["Vue 3 Frontend"]
+    B --> C["Flask REST API"]
+    C --> D["JWT Authentication"]
+    C --> E["Business Logic & Services"]
+    E --> F[("PostgreSQL Database")]
+    E --> G["PDF Generation"]
+    E --> H["Reports & Analytics"]
 ```
 
-- **Frontend:** Displays the application and handles user interactions.
-- **Backend:** Handles business rules, authentication and data processing.
-- **Database:** Stores employee, customer, inventory, production and financial records.
+### 🔄 Core Business Workflow
+
+```mermaid
+flowchart TD
+    A["🛒 Purchase Raw Materials"] --> B["📦 Update Inventory"]
+    B --> C["🏭 Production Planning"]
+    C --> D["⚙️ Consume Materials"]
+    D --> E["📦 Add Finished Goods"]
+    E --> F["🛍️ Create Sales Order"]
+    F --> G{"Order Approval"}
+    G -->|Approved| H["🧾 Generate Invoice"]
+    H --> I["🚚 Dispatch Products"]
+    I --> J["💰 Record Payment"]
+    J --> K["📊 Update Reports"]
+    G -->|Rejected| L["❌ Order Rejected"]
+```
+
+### ☁️ Deployment Architecture
+
+```mermaid
+flowchart LR
+    A["🌐 Browser"] --> B["Render Static Site"]
+    B -->|"HTTPS / API Requests"| C["Render Web Service"]
+    C --> D[("Render PostgreSQL")]
+
+    style B fill:#dbeafe,stroke:#2563eb,color:#111827
+    style C fill:#dcfce7,stroke:#16a34a,color:#111827
+    style D fill:#fef3c7,stroke:#d97706,color:#111827
+```
 
 ---
 
-## 4. Repository Structure
+## 🛠️ Technology Stack
 
-The repository is divided into two main applications.
+| Category            | Technologies                              |
+| ------------------- | ----------------------------------------- |
+| Frontend            | Vue 3, JavaScript, HTML, CSS, Bootstrap 5 |
+| Backend             | Python, Flask, Flask REST API             |
+| Database            | PostgreSQL, SQLAlchemy                    |
+| Authentication      | Flask-JWT-Extended                        |
+| Database Migrations | Flask-Migrate, Alembic                    |
+| PDF Generation      | ReportLab                                 |
+| Data Processing     | Pandas, OpenPyXL                          |
+| Deployment          | Render                                    |
+
+---
+
+## 📁 Project Structure
 
 ```text
 SnackFlow-ERP/
@@ -91,290 +166,59 @@ SnackFlow-ERP/
 │   │   ├── models/
 │   │   ├── routes/
 │   │   ├── services/
-│   │   ├── utils/
-│   │   ├── __init__.py
-│   │   └── config.py
-│   │
+│   │   └── ...
 │   ├── migrations/
-│   ├── .env
-│   ├── requirements.txt
-│   └── run.py
+│   ├── run.py
+│   ├── seed_admin.py
+│   └── requirements.txt
 │
 ├── frontend/
 │   ├── public/
 │   ├── src/
 │   │   ├── assets/
 │   │   ├── components/
-│   │   ├── layouts/
+│   │   ├── router/
 │   │   ├── services/
 │   │   ├── views/
-│   │   ├── router.js
-│   │   ├── App.vue
-│   │   └── main.js
-│   │
+│   │   └── ...
 │   ├── .env.development
 │   ├── .env.production
-│   ├── index.html
 │   └── package.json
 │
 └── README.md
 ```
 
-### Backend — `backend/`
-
-Contains the Flask application and all server-side functionality.
-
-| Location           | What it contains                                                  |
-| ------------------ | ----------------------------------------------------------------- |
-| `app/models/`      | Database models and relationships                                 |
-| `app/routes/`      | Application request handlers and module operations                |
-| `app/services/`    | Business logic such as production, purchases and order processing |
-| `app/utils/`       | Shared utilities and permission helpers                           |
-| `app/config.py`    | Application configuration                                         |
-| `app/__init__.py`  | Flask application initialization                                  |
-| `migrations/`      | Database schema migration history                                 |
-| `run.py`           | Backend entry point                                               |
-| `requirements.txt` | Python dependencies                                               |
-| `.env`             | Local environment variables and secrets                           |
-
-### Frontend — `frontend/`
-
-Contains the Vue application and its user interface.
-
-| Location          | What it contains                              |
-| ----------------- | --------------------------------------------- |
-| `src/views/`      | Individual pages for ERP modules              |
-| `src/components/` | Reusable interface components                 |
-| `src/layouts/`    | Application layout and navigation             |
-| `src/services/`   | Axios configuration and backend communication |
-| `src/assets/`     | Frontend assets                               |
-| `src/router.js`   | Page navigation and route protection          |
-| `src/App.vue`     | Root Vue component                            |
-| `src/main.js`     | Frontend entry point                          |
-| `public/`         | Static assets such as the SnackFlow logo      |
-| `index.html`      | Browser document and page title               |
-| `package.json`    | Frontend dependencies and scripts             |
-
 ---
 
-## 5. User Roles
+## ⚙️ Run Locally
 
-SnackFlow supports four employee roles. Each role has access to the modules required for its responsibilities.
-
-### Administrator
-
-<text>**Role: ADMIN**</text>
-
-The administrator manages the overall business and ERP system.
-
-- Manage items, customers and suppliers.
-- Manage employee accounts and access.
-- Manage purchases and inventory.
-- Manage production.
-- Review, approve and reject sales orders.
-- Manage invoices, dispatches and payments.
-- Access business reports and audit logs.
-
-### Sales Executive
-
-<text>**Role: SALESMAN**</text>
-
-Responsible for customer orders.
-
-- View customers.
-- Create sales orders.
-- Submit orders for approval.
-- View and track their own orders.
-
-### Production Manager
-
-<text>**Role: PRODUCTION**</text>
-
-Responsible for manufacturing operations.
-
-- View inventory and stock levels.
-- Manage production runs.
-- Record actual material consumption.
-- Record actual production output.
-- Complete production runs.
-
-### Accountant
-
-<text>**Role: ACCOUNTANT**</text>
-
-Responsible for financial operations.
-
-- View and issue invoices.
-- Record customer payments.
-- Allocate payments to invoices.
-- Monitor outstanding balances.
-- Access financial and business reports.
-
-### Role Access Overview
-
-| Module       | Admin | Salesman | Production | Accountant |
-| ------------ | :---: | :------: | :--------: | :--------: |
-| Dashboard    |   ✓   |    ✓     |     ✓      |     ✓      |
-| Items        |   ✓   |          |            |            |
-| Customers    |   ✓   |    ✓     |            |            |
-| Suppliers    |   ✓   |          |            |            |
-| Inventory    |   ✓   |          |     ✓      |            |
-| Purchases    |   ✓   |          |            |            |
-| Production   |   ✓   |          |     ✓      |            |
-| Sales Orders |   ✓   |    ✓     |            |            |
-| Invoices     |   ✓   |          |            |     ✓      |
-| Dispatches   |   ✓   |          |            |            |
-| Payments     |   ✓   |          |            |     ✓      |
-| Reports      |   ✓   |          |            |     ✓      |
-| Employees    |   ✓   |          |            |            |
-
-Access is enforced through backend authorization as well as frontend navigation.
-
----
-
-## 6. Business Workflow
-
-The central workflow connects all major manufacturing operations.
-
-```mermaid
-flowchart TD
-    A[Purchase Raw Materials] --> B[Receive Materials]
-    B --> C[Inventory Updated]
-    C --> D[Production Using BOM]
-    D --> E[Record Actual Consumption]
-    E --> F[Complete Production]
-    F --> G[Finished Goods Added to Stock]
-    G --> H[Sales Order Created]
-    H --> I[Admin Approval]
-    I --> J[Invoice Generation]
-    J --> K[Invoice Issued]
-    K --> L[Dispatch Products]
-    L --> M[Finished Stock Deducted]
-    M --> N[Customer Payment]
-    N --> O[Payment Allocation]
-    O --> P[Reports and Receivables]
-```
-
-This ensures that purchasing, manufacturing, sales and accounting records remain connected.
-
----
-
-## 7. Demo Workflow — Example
-
-The following example demonstrates how all four users collaborate to complete a customer order.
-
-**Scenario:** Sri Lakshmi Stores orders 50 packets of Murukku 200g.
-
-### Step 1 — Administrator
-
-- Configures company information.
-- Creates items, customers and suppliers.
-- Sets up employee accounts.
-- Configures the product's Bill of Materials.
-
-### Step 2 — Production Manager
-
-- Checks raw material availability.
-- Manages a production run.
-- Records actual consumption and output.
-- Completes production.
-- Finished goods are added to inventory automatically.
-
-### Step 3 — Sales Executive
-
-- Logs in to the Salesman account.
-- Selects Sri Lakshmi Stores.
-- Creates an order for 50 Murukku packets at ₹50 each.
-- Submits the order for approval.
-
-<text color="secondary" size="xs">Example order value</text>
-
-| Description |     Amount |
-| ----------- | ---------: |
-| 50 × ₹50    |     ₹2,500 |
-| GST (5%)    |       ₹125 |
-| **Total**   | **₹2,625** |
-
-### Step 4 — Administrator
-
-- Reviews the submitted order.
-- Checks the customer and order details.
-- Approves the order.
-
-### Step 5 — Accountant
-
-- Generates an invoice from the approved order.
-- Reviews the invoice.
-- Issues the invoice.
-
-### Step 6 — Administrator
-
-- Creates the dispatch.
-- Enters delivery information.
-- Confirms dispatch.
-- Finished goods stock is automatically reduced by 50 packets.
-
-### Step 7 — Accountant
-
-- Records a ₹2,000 payment through UPI.
-- Allocates the payment to the invoice.
-- Checks the outstanding amount.
-
-<text color="secondary" size="xs">Final invoice position</text>
-
-| Description      | Amount |
-| ---------------- | -----: |
-| Invoice          | ₹2,625 |
-| Payment received | ₹2,000 |
-| Outstanding      |   ₹625 |
-
-### Workflow Participants
-
-```mermaid
-sequenceDiagram
-    participant A as Administrator
-    participant P as Production Manager
-    participant S as Sales Executive
-    participant AC as Accountant
-
-    A->>P: Prepare manufacturing setup
-    P->>P: Complete production
-    P-->>A: Finished goods available
-    S->>A: Submit customer order
-    A->>A: Review and approve
-    A->>AC: Approved order ready for invoicing
-    AC->>AC: Generate and issue invoice
-    A->>A: Dispatch products
-    A-->>AC: Dispatch completed
-    AC->>AC: Record and allocate payment
-    AC-->>A: Outstanding balance updated
-```
-
----
-
-## 8. Running Locally
-
-### Requirements
+### Prerequisites
 
 - Python 3.11+
-- PostgreSQL
 - Node.js and npm
-- Git
+- PostgreSQL
 
-### Backend Setup
+### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/YOUR-GITHUB-USERNAME/SnackFlow-ERP.git
 cd SnackFlow-ERP
+```
 
+### 2. Backend Setup
+
+```bash
 cd backend
+
 python -m venv venv
 ```
 
-Activate the environment on Windows:
+Activate the virtual environment:
 
-```powershell
-.\venv\Scripts\Activate.ps1
+**Windows**
+
+```bash
+venv\Scripts\activate
 ```
 
 Install dependencies:
@@ -383,17 +227,35 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Configure the backend `.env` file with the database connection and required secrets.
+Create a `.env` file inside `backend/`:
 
-Create the PostgreSQL database and apply the project's database migrations.
+```env
+DATABASE_URL=postgresql+psycopg://username:password@localhost:5432/snackflow
+SECRET_KEY=your-secret-key
+JWT_SECRET_KEY=your-jwt-secret
+```
 
-Start Flask:
+Apply database migrations:
+
+```bash
+flask --app run db upgrade
+```
+
+Create the initial administrator:
+
+```bash
+python seed_admin.py
+```
+
+Start the backend:
 
 ```bash
 python run.py
 ```
 
-### Frontend Setup
+Backend runs at `http://127.0.0.1:5000`.
+
+### 3. Frontend Setup
 
 Open another terminal:
 
@@ -402,13 +264,13 @@ cd frontend
 npm install
 ```
 
-Configure `.env.development`:
+Create or configure `.env.development`:
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:5000/api
 ```
 
-Start Vue:
+Start the frontend:
 
 ```bash
 npm run dev
@@ -418,53 +280,34 @@ Open the local URL displayed by Vite.
 
 ---
 
-## 9. Deployment Configuration
+## 🔒 Security & Configuration
 
-The frontend supports separate development and production backend URLs.
+- Authentication is handled using JWT access and refresh tokens.
+- Passwords are handled through the backend authentication service.
+- Role-based permissions protect application resources.
+- Environment variables are used for sensitive configuration.
+- Production and development API URLs are configured separately.
 
-Development:
-
-`frontend/.env.development`
-
-```env
-VITE_API_BASE_URL=http://127.0.0.1:5000/api
-```
-
-Production:
-
-`frontend/.env.production`
-
-```env
-VITE_API_BASE_URL=https://YOUR-DEPLOYED-BACKEND-URL/api
-```
-
-Before deployment, configure the actual backend URL, database, CORS and production secrets.
+**Never commit `.env` files containing real credentials, database passwords, or secret keys.**
 
 ---
 
-## 10. Scope and Limitations
+## 📌 Project Scope
 
-SnackFlow currently focuses on the essential operations of a small snack manufacturing business.
+SnackFlow is developed as a practical ERP solution for a small-scale snack manufacturing business.
 
-Implemented areas include:
+The project focuses on connecting everyday business operations, reducing manual record-keeping, improving inventory visibility, and providing a unified view of production and financial activities.
 
-- Role-based employee access.
-- Inventory and purchase management.
-- BOM-based production.
-- Sales order approval.
-- Invoice generation.
-- Dispatch management.
-- Payment allocation.
-- Business reporting and audit logs.
-
-Advanced features such as payroll, full accounting ledgers, bank reconciliation and complete statutory GST compliance are outside the current project scope.
-
-**Invoice Disclaimer:** Generated invoice PDFs are demonstration documents and are not valid GST tax invoices.
+> **Disclaimer:** This is a demonstration ERP application. Invoice documents are intended for demonstration and are not valid GST tax invoices.
 
 ---
 
-## SnackFlow ERP
+## 👨‍💻 Developer
 
-**One connected workspace. Every stage of manufacturing.**
+Developed as a full-stack ERP project using Vue.js, Flask, and PostgreSQL.
 
-From raw materials to production, from customer orders to payments — SnackFlow brings business operations together.
+**SnackFlow ERP — From Raw Materials to Revenue.** 🥨
+
+---
+
+⭐ If you find this project interesting, consider giving the repository a star!
