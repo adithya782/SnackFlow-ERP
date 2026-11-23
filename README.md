@@ -29,6 +29,28 @@ A role-based Enterprise Resource Planning (ERP) system designed for small-scale 
 
 ---
 
+## 🔑 Demo Access
+
+You can explore SnackFlow ERP using the following demonstration accounts.
+
+| Role                  | Email                      | Password             |
+| --------------------- | -------------------------- | -------------------- |
+| 👑 Admin              | `admin@snackflow.com`      | `password`           |
+| 🛍️ Sales Executive    | `sales@snackflow.com`      | `SnackFlow@Demo2026` |
+| 🏭 Production Manager | `production@snackflow.com` | `SnackFlow@Demo2026` |
+| 💳 Accountant         | `accounts@snackflow.com`   | `SnackFlow@Demo2026` |
+
+### 👀 What can you explore?
+
+- **Admin:** User management, company settings, and overall system administration.
+- **Sales Executive:** Customer management and sales order processing.
+- **Production Manager:** Bills of Materials (BOMs), production planning, and material consumption.
+- **Accountant:** Invoice management, payment allocation, receivables, and financial reports.
+
+> ⚠️ **Demo Environment:** These are shared demonstration credentials provided for project evaluation. Please use the accounts only for exploring the application. Avoid entering personal or confidential information.
+
+> 💡 **Note:** The application uses role-based access control, so each account has access only to its permitted modules.
+
 ## ✨ Features
 
 ### 📦 Inventory Management
@@ -109,6 +131,17 @@ flowchart TD
     E --> H["Reports & Analytics"]
 ```
 
+## 🏢 Deployment Model
+
+SnackFlow follows a **Single-Tenant ERP Architecture**, designed for one manufacturing business operating within its own ERP environment.
+
+- **One manufacturing organization:** A single company manages its business operations through SnackFlow.
+- **Role-based access:** Multiple employees access the same organization through Admin, Sales, Production, and Accountant roles.
+- **Centralized data:** Inventory, procurement, production, customers, sales, and financial records are maintained within the same organizational database.
+- **Company-level configuration:** Company details and business settings are managed centrally by the administrator.
+
+> **Scope:** The current implementation supports one manufacturing organization per deployment. It is not designed as a multi-tenant SaaS platform for independently isolated companies.
+
 ### 🔄 Core Business Workflow
 
 ```mermaid
@@ -163,28 +196,41 @@ SnackFlow-ERP/
 │
 ├── backend/
 │   ├── app/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   └── ...
-│   ├── migrations/
-│   ├── run.py
-│   ├── seed_admin.py
-│   └── requirements.txt
+│   │   ├── models/             # Database models
+│   │   ├── routes/             # REST API endpoints
+│   │   ├── services/           # Business logic
+│   │   ├── utils/              # Helpers and utilities
+│   │   ├── __init__.py         # Flask application factory
+│   │   └── config.py           # Application configuration
+│   │
+│   ├── migrations/             # Database migration history
+│   │   └── versions/
+│   ├── requirements.txt
+│   ├── run.py                  # Backend entry point
+│   ├── seed_admin.py           # Initial admin setup
+│   └── seed_admin_render.py    # Cloud admin initialization
+│
+├── docs/                       # Project documentation
 │
 ├── frontend/
-│   ├── public/
+│   ├── public/                 # Static assets and icons
 │   ├── src/
-│   │   ├── assets/
-│   │   ├── components/
-│   │   ├── router/
-│   │   ├── services/
-│   │   ├── views/
-│   │   └── ...
+│   │   ├── assets/             # Images and frontend assets
+│   │   ├── components/         # Reusable Vue components
+│   │   ├── layouts/            # Application layouts
+│   │   ├── services/           # API integration
+│   │   ├── views/              # Application pages
+│   │   ├── App.vue
+│   │   ├── main.js
+│   │   ├── router.js           # Vue Router configuration
+│   │   └── style.css
+│   │
 │   ├── .env.development
 │   ├── .env.production
-│   └── package.json
+│   ├── package.json
+│   └── vite.config.js
 │
+├── .gitignore
 └── README.md
 ```
 
