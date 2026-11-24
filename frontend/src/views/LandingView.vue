@@ -5,11 +5,8 @@
       <div v-if="showIntro" class="intro-screen">
         <div class="intro-content">
           <div class="intro-icon">🥨</div>
-
           <h1 class="intro-brand">SNACKFLOW</h1>
-
           <div class="intro-line"></div>
-
           <h2 class="intro-welcome">
             <span
               v-for="(letter, index) in welcomeLetters"
@@ -20,8 +17,7 @@
               {{ letter === " " ? "\u00A0" : letter }}
             </span>
           </h2>
-
-          <p class="intro-caption">MANUFACTURER EDITION</p>
+          <p class="intro-caption">{{ t("landing.manufacturerEdition") }}</p>
         </div>
       </div>
     </Transition>
@@ -36,7 +32,27 @@
         </div>
 
         <div class="nav-right">
-          <span class="edition-label">MANUFACTURER EDITION</span>
+          <div class="landing-language-switch">
+            <button
+              type="button"
+              :class="{ active: locale === 'en' }"
+              @click="changeLanguage('en')"
+            >
+              English
+            </button>
+
+            <button
+              type="button"
+              :class="{ active: locale === 'ta' }"
+              @click="changeLanguage('ta')"
+            >
+              தமிழ்
+            </button>
+          </div>
+
+          <span class="edition-label">
+            {{ t("landing.manufacturerEdition") }}
+          </span>
         </div>
       </nav>
 
@@ -45,26 +61,25 @@
         <div class="hero-text">
           <div class="eyebrow">
             <span class="status-dot"></span>
-            A SMARTER WAY TO MANAGE MANUFACTURING
+            {{ t("landing.eyebrow") }}
           </div>
 
           <h1>
-            Your entire business.
-            <span>One connected workspace.</span>
+            {{ t("landing.heroTitle") }}
+            <span>{{ t("landing.heroTitleHighlight") }}</span>
           </h1>
 
           <p class="hero-description">
-            From raw materials to finished products, sales to payments. Manage
-            your entire manufacturing operation with one integrated workspace.
+            {{ t("landing.heroDescription") }}
           </p>
 
           <button class="enter-button" @click="goToLogin">
-            LET'S GET IN
+            {{ t("landing.enterButton") }}
             <span class="button-arrow">→</span>
           </button>
 
           <p class="hero-note">
-            Everything your business needs. All in one place.
+            {{ t("landing.heroNote") }}
           </p>
         </div>
 
@@ -76,15 +91,17 @@
           <div class="floating-card stock-card">
             <span class="visual-icon">📦</span>
             <div>
-              <strong>Inventory</strong>
-              <small>Stock management</small>
+              <strong>{{ t("landing.inventory") }}</strong>
+              <small>{{ t("landing.stockManagement") }}</small>
             </div>
           </div>
 
           <div class="main-illustration">
             <div class="illustration-top">🥨</div>
             <div class="illustration-title">SNACKFLOW</div>
-            <div class="illustration-subtitle">MANUFACTURING WORKSPACE</div>
+            <div class="illustration-subtitle">
+              {{ t("landing.manufacturingWorkspace") }}
+            </div>
 
             <div class="illustration-boxes">
               <div class="product-box box-one">📦</div>
@@ -96,16 +113,16 @@
           <div class="floating-card production-card">
             <span class="visual-icon">⚙️</span>
             <div>
-              <strong>Production</strong>
-              <small>Manufacturing control</small>
+              <strong>{{ t("landing.production") }}</strong>
+              <small>{{ t("landing.manufacturingControl") }}</small>
             </div>
           </div>
 
           <div class="floating-card sales-card">
             <span class="visual-icon">📊</span>
             <div>
-              <strong>Business insights</strong>
-              <small>Reports and analytics</small>
+              <strong>{{ t("landing.businessInsights") }}</strong>
+              <small>{{ t("landing.reportsAnalytics") }}</small>
             </div>
           </div>
         </div>
@@ -114,36 +131,34 @@
       <!-- Features -->
       <section class="features-section">
         <div class="features-heading">
-          <span>ONE PLATFORM</span>
-          <h2>Everything works together.</h2>
-          <p>
-            All your essential business operations, connected in one system.
-          </p>
+          <span>{{ t("landing.onePlatform") }}</span>
+          <h2>{{ t("landing.featuresTitle") }}</h2>
+          <p>{{ t("landing.featuresDescription") }}</p>
         </div>
 
         <div class="feature-grid">
           <div class="feature-card">
             <div class="feature-icon">📦</div>
-            <h3>Inventory</h3>
-            <p>Track stock levels, materials and finished goods.</p>
+            <h3>{{ t("landing.inventory") }}</h3>
+            <p>{{ t("landing.inventoryDescription") }}</p>
           </div>
 
           <div class="feature-card">
             <div class="feature-icon">⚙️</div>
-            <h3>Production</h3>
-            <p>Manage manufacturing runs, recipes and material usage.</p>
+            <h3>{{ t("landing.production") }}</h3>
+            <p>{{ t("landing.productionDescription") }}</p>
           </div>
 
           <div class="feature-card">
             <div class="feature-icon">📋</div>
-            <h3>Sales</h3>
-            <p>Manage customer orders, invoices and dispatches.</p>
+            <h3>{{ t("landing.sales") }}</h3>
+            <p>{{ t("landing.salesDescription") }}</p>
           </div>
 
           <div class="feature-card">
             <div class="feature-icon">💰</div>
-            <h3>Finance</h3>
-            <p>Monitor payments, outstanding balances and reports.</p>
+            <h3>{{ t("landing.finance") }}</h3>
+            <p>{{ t("landing.financeDescription") }}</p>
           </div>
         </div>
       </section>
@@ -151,37 +166,53 @@
       <!-- Bottom CTA -->
       <section class="bottom-cta">
         <div>
-          <h2>Ready to simplify your operations?</h2>
-          <p>Your business. Your people. One workspace.</p>
+          <h2>{{ t("landing.bottomTitle") }}</h2>
+          <p>{{ t("landing.bottomDescription") }}</p>
         </div>
 
         <button class="bottom-button" @click="goToLogin">
-          Let's Get In <span>→</span>
+          {{ t("landing.enterButton") }}
+          <span>→</span>
         </button>
       </section>
 
       <!-- Footer -->
       <footer class="footer">
         <div class="footer-brand">🥨 SNACKFLOW</div>
-        <p>Manufacturer Edition · Built for better business management</p>
+        <p>{{ t("landing.footerDescription") }}</p>
       </footer>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { setLanguage } from "../i18n";
 
 const router = useRouter();
+const { t, locale } = useI18n();
 
 const showIntro = ref(true);
-const welcomeLetters = "WELCOME TO SNACKFLOW".split("");
+
+const welcomeLetters = computed(() => {
+  const text = t("landing.introWelcome");
+
+  const segmenter = new Intl.Segmenter(locale.value, {
+    granularity: "grapheme",
+  });
+
+  return Array.from(segmenter.segment(text), (item) => item.segment);
+});
+function changeLanguage(language) {
+  setLanguage(language);
+}
 
 onMounted(() => {
   setTimeout(() => {
     showIntro.value = false;
-  }, 2400);
+  }, 4500);
 });
 
 function goToLogin() {
@@ -819,6 +850,53 @@ function goToLogin() {
   .landing-content * {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.landing-language-switch {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: #f0f4f0;
+  border-radius: 25px;
+}
+
+.landing-language-switch button {
+  border: none;
+  background: transparent;
+  color: #467456;
+  padding: 7px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.landing-language-switch button.active {
+  background: #173b2b;
+  color: white;
+}
+
+.landing-language-switch button:hover {
+  opacity: 0.85;
+}
+
+@media (max-width: 550px) {
+  .nav-right {
+    gap: 7px;
+  }
+
+  .landing-language-switch button {
+    padding: 6px 8px;
+    font-size: 10px;
   }
 }
 </style>

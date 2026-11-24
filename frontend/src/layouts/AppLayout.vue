@@ -4,16 +4,16 @@
     <aside class="sidebar" :class="{ 'sidebar-open': sidebarOpen }">
       <div class="brand">
         <h4>🥨 SnackFlow</h4>
-        <small>ERP Management</small>
+        <small>{{ $t("app.subtitle") }}</small>
       </div>
 
-      <div class="menu-label">WORKSPACE</div>
+      <div class="menu-label">{{ $t("layout.workspace") }}</div>
 
       <RouterLink to="/dashboard" class="nav-link" @click="sidebarOpen = false">
-        <span>▦</span> Dashboard
+        <span>▦</span> {{ $t("layout.dashboard") }}
       </RouterLink>
 
-      <div class="menu-label">MANAGEMENT</div>
+      <div class="menu-label">{{ $t("layout.management") }}</div>
 
       <RouterLink
         v-for="item in visibleModules"
@@ -23,7 +23,7 @@
         @click="sidebarOpen = false"
       >
         <span>{{ item.icon }}</span>
-        {{ item.name }}
+        {{ $t(`nav.${item.translationKey}`) }}
       </RouterLink>
 
       <div class="sidebar-footer">
@@ -33,12 +33,14 @@
           </div>
 
           <div>
-            <strong>{{ user?.name || "User" }}</strong>
-            <small>{{ user?.role || "Employee" }}</small>
+            <strong>{{ user?.name || $t("layout.user") }}</strong>
+            <small>{{ user?.role || $t("layout.employee") }}</small>
           </div>
         </div>
 
-        <button class="logout-btn" @click="logout">↪ Logout</button>
+        <button class="logout-btn" @click="logout">
+          ↪ {{ $t("layout.logout") }}
+        </button>
       </div>
     </aside>
 
@@ -49,11 +51,29 @@
           ☰
         </button>
 
-        <span class="topbar-title">SnackFlow ERP</span>
+        <span class="topbar-title">{{ $t("app.name") }}</span>
 
-        <span class="role-badge">
-          {{ user?.role || "User" }}
-        </span>
+        <div class="topbar-actions">
+          <div class="language-switch">
+            <button
+              :class="{ active: locale === 'en' }"
+              @click="changeLanguage('en')"
+            >
+              English
+            </button>
+
+            <button
+              :class="{ active: locale === 'ta' }"
+              @click="changeLanguage('ta')"
+            >
+              தமிழ்
+            </button>
+          </div>
+
+          <span class="role-badge">
+            {{ user?.role || "User" }}
+          </span>
+        </div>
       </header>
 
       <main class="page-content">
@@ -72,81 +92,96 @@
 <script setup>
 import { ref, computed } from "vue";
 import { RouterLink, RouterView, useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
+import { setLanguage } from "../i18n";
 
 const router = useRouter();
-const sidebarOpen = ref(false);
+const { locale } = useI18n();
 
+const sidebarOpen = ref(false);
 const user = ref(JSON.parse(localStorage.getItem("user") || "null"));
 
 const modules = [
   {
     name: "Items",
+    translationKey: "items",
     path: "items",
     icon: "📦",
     roles: ["ADMIN"],
   },
   {
     name: "Customers",
+    translationKey: "customers",
     path: "customers",
     icon: "👥",
     roles: ["ADMIN", "SALESMAN"],
   },
   {
     name: "Suppliers",
+    translationKey: "suppliers",
     path: "suppliers",
     icon: "🏭",
     roles: ["ADMIN"],
   },
   {
     name: "Inventory",
+    translationKey: "inventory",
     path: "inventory",
     icon: "🗃️",
     roles: ["ADMIN", "PRODUCTION"],
   },
   {
     name: "Purchases",
+    translationKey: "purchases",
     path: "purchases",
     icon: "🛒",
     roles: ["ADMIN"],
   },
   {
     name: "Production",
+    translationKey: "production",
     path: "production",
     icon: "⚙️",
     roles: ["ADMIN", "PRODUCTION"],
   },
   {
     name: "Sales Orders",
+    translationKey: "salesOrders",
     path: "sales-orders",
     icon: "📋",
     roles: ["ADMIN", "SALESMAN"],
   },
   {
     name: "Invoices",
+    translationKey: "invoices",
     path: "invoices",
     icon: "🧾",
     roles: ["ADMIN", "ACCOUNTANT"],
   },
   {
     name: "Dispatches",
+    translationKey: "dispatches",
     path: "dispatches",
     icon: "🚚",
     roles: ["ADMIN"],
   },
   {
     name: "Payments",
+    translationKey: "payments",
     path: "payments",
     icon: "💰",
     roles: ["ADMIN", "ACCOUNTANT"],
   },
   {
     name: "Reports",
+    translationKey: "reports",
     path: "reports",
     icon: "📊",
     roles: ["ADMIN", "ACCOUNTANT"],
   },
   {
     name: "Employees",
+    translationKey: "employees",
     path: "employees",
     icon: "👨‍💼",
     roles: ["ADMIN"],
@@ -155,9 +190,12 @@ const modules = [
 
 const visibleModules = computed(() => {
   const role = user.value?.role;
-
   return modules.filter((item) => item.roles.includes(role));
 });
+
+function changeLanguage(language) {
+  setLanguage(language);
+}
 
 function logout() {
   localStorage.removeItem("access_token");
@@ -278,12 +316,12 @@ function logout() {
 }
 
 .topbar {
-  height: 65px;
+  min-height: 65px;
   background: white;
   border-bottom: 1px solid #e5e9e6;
   display: flex;
   align-items: center;
-  padding: 0 25px;
+  padding: 10px 25px;
   gap: 15px;
 }
 
@@ -291,8 +329,37 @@ function logout() {
   font-weight: 600;
 }
 
-.role-badge {
+.topbar-actions {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.language-switch {
+  display: flex;
+  align-items: center;
+  border: 1px solid #dce5df;
+  border-radius: 20px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.language-switch button {
+  border: none;
+  background: transparent;
+  padding: 6px 11px;
+  border-radius: 16px;
+  font-size: 12px;
+  color: #52665a;
+}
+
+.language-switch button.active {
+  background: #173b2b;
+  color: white;
+}
+
+.role-badge {
   background: #e5f3e9;
   color: #21613b;
   padding: 6px 12px;
@@ -343,6 +410,29 @@ function logout() {
 
   .page-content {
     padding: 15px;
+  }
+
+  .topbar {
+    padding: 10px 12px;
+    gap: 8px;
+  }
+
+  .topbar-title {
+    font-size: 14px;
+  }
+
+  .topbar-actions {
+    gap: 6px;
+  }
+
+  .language-switch button {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .role-badge {
+    padding: 5px 8px;
+    font-size: 10px;
   }
 }
 </style>

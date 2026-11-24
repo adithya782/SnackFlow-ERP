@@ -1,19 +1,19 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const productionRuns = ref([]);
 const boms = ref([]);
 const loading = ref(true);
 const saving = ref(false);
 const completingRunId = ref(null);
-
 const showModal = ref(false);
 const showActualsModal = ref(false);
-
 const error = ref("");
 const modalError = ref("");
-
 const selectedRun = ref(null);
 
 const form = ref({
@@ -53,8 +53,7 @@ async function fetchProduction() {
     const response = await api.get("/production");
     productionRuns.value = response.data.production_runs;
   } catch (err) {
-    error.value =
-      err.response?.data?.message || "Failed to load production records.";
+    error.value = err.response?.data?.message || t("production.loadError");
   } finally {
     loading.value = false;
   }
@@ -65,8 +64,7 @@ async function fetchBoms() {
     const response = await api.get("/boms");
     boms.value = response.data.boms;
   } catch (err) {
-    error.value =
-      err.response?.data?.message || "Failed to load Bills of Materials.";
+    error.value = err.response?.data?.message || t("production.bomLoadError");
   }
 }
 
@@ -77,6 +75,7 @@ function openModal() {
   };
 
   error.value = "";
+  modalError.value = "";
   showModal.value = true;
 }
 
@@ -94,7 +93,7 @@ async function createProductionRun() {
     await fetchProduction();
   } catch (err) {
     modalError.value =
-      err.response?.data?.message || "Failed to create production run.";
+      err.response?.data?.message || t("production.createError");
   } finally {
     saving.value = false;
   }
@@ -126,7 +125,7 @@ async function saveActuals() {
   const output = Number(actualForm.value.actual_output);
 
   if (!Number.isFinite(output) || output <= 0) {
-    modalError.value = "Actual output must be greater than zero.";
+    modalError.value = t("production.invalidOutput");
     return;
   }
 
@@ -134,7 +133,9 @@ async function saveActuals() {
     const quantity = Number(material.actual_quantity);
 
     if (!Number.isFinite(quantity) || quantity <= 0) {
-      modalError.value = `Enter a valid actual quantity for ${material.material_name}.`;
+      modalError.value = t("production.invalidMaterialQuantity", {
+        name: material.material_name,
+      });
       return;
     }
   }
@@ -153,12 +154,10 @@ async function saveActuals() {
 
     showActualsModal.value = false;
     selectedRun.value = null;
-
     await fetchProduction();
   } catch (err) {
     modalError.value =
-      err.response?.data?.message ||
-      "Failed to save actual production details.";
+      err.response?.data?.message || t("production.saveActualsError");
   } finally {
     saving.value = false;
   }
@@ -167,7 +166,9 @@ async function saveActuals() {
 // Complete production and update inventory
 async function completeProduction(run) {
   const confirmed = window.confirm(
-    `Complete production run ${run.run_number}? This will consume raw materials and add finished goods to inventory.`,
+    t("production.confirmComplete", {
+      number: run.run_number,
+    }),
   );
 
   if (!confirmed) return;
@@ -180,14 +181,15 @@ async function completeProduction(run) {
 
     alert(
       response.data.message +
-        "\nTotal Material Cost: ₹" +
+        "\n" +
+        t("production.totalMaterialCost") +
+        ": ₹" +
         Number(response.data.total_material_cost).toFixed(2),
     );
 
     await fetchProduction();
   } catch (err) {
-    error.value =
-      err.response?.data?.message || "Failed to complete production.";
+    error.value = err.response?.data?.message || t("production.completeError");
   } finally {
     completingRunId.value = null;
   }
@@ -214,6 +216,17 @@ function statusClass(status) {
   return classes[status] || "bg-secondary";
 }
 
+function formatStatus(status) {
+  const translations = {
+    PLANNED: "production.statuses.planned",
+    IN_PROGRESS: "production.statuses.inProgress",
+    COMPLETED: "production.statuses.completed",
+    CANCELLED: "production.statuses.cancelled",
+  };
+
+  return translations[status] ? t(translations[status]) : status;
+}
+
 onMounted(async () => {
   await Promise.all([fetchProduction(), fetchBoms()]);
 });
@@ -224,14 +237,14 @@ onMounted(async () => {
     <!-- Page Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h3 class="fw-bold mb-1">Production</h3>
+        <h3 class="fw-bold mb-1">{{ t("production.title") }}</h3>
         <p class="text-muted mb-0">
-          Manage manufacturing runs and finished goods.
+          {{ t("production.subtitle") }}
         </p>
       </div>
 
       <button class="btn btn-success" @click="openModal">
-        + New Production Run
+        + {{ t("production.newRun") }}
       </button>
     </div>
 
@@ -245,27 +258,29 @@ onMounted(async () => {
       <div class="card-body">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-success"></div>
-          <p class="text-muted mt-2 mb-0">Loading production records...</p>
+          <p class="text-muted mt-2 mb-0">
+            {{ t("production.loading") }}
+          </p>
         </div>
 
         <div
           v-else-if="productionRuns.length === 0"
           class="text-center text-muted py-5"
         >
-          No production runs found.
+          {{ t("production.noRuns") }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>Run Number</th>
-                <th>Date</th>
-                <th>Planned Output</th>
-                <th>Actual Output</th>
-                <th>Materials</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{{ t("production.runNumber") }}</th>
+                <th>{{ t("production.date") }}</th>
+                <th>{{ t("production.plannedOutput") }}</th>
+                <th>{{ t("production.actualOutput") }}</th>
+                <th>{{ t("production.materials") }}</th>
+                <th>{{ t("production.status") }}</th>
+                <th>{{ t("production.actions") }}</th>
               </tr>
             </thead>
 
@@ -276,16 +291,13 @@ onMounted(async () => {
                 </td>
 
                 <td>{{ formatDate(run.production_date) }}</td>
-
                 <td>{{ run.planned_output }}</td>
-
                 <td>{{ run.actual_output ?? "-" }}</td>
-
                 <td>{{ run.materials?.length ?? 0 }}</td>
 
                 <td>
                   <span class="badge" :class="statusClass(run.status)">
-                    {{ run.status }}
+                    {{ formatStatus(run.status) }}
                   </span>
                 </td>
 
@@ -295,7 +307,7 @@ onMounted(async () => {
                     class="btn btn-sm btn-outline-primary"
                     @click="openActuals(run)"
                   >
-                    Record Actuals
+                    {{ t("production.recordActuals") }}
                   </button>
 
                   <button
@@ -305,7 +317,9 @@ onMounted(async () => {
                     @click="completeProduction(run)"
                   >
                     {{
-                      completingRunId === run.id ? "Completing..." : "Complete"
+                      completingRunId === run.id
+                        ? t("production.completing")
+                        : t("production.complete")
                     }}
                   </button>
 
@@ -314,10 +328,12 @@ onMounted(async () => {
                     class="text-success small fw-semibold"
                   >
                     <i class="bi bi-check-circle"></i>
-                    Completed
+                    {{ t("production.completed") }}
                   </span>
 
-                  <span v-else class="text-muted small"> No actions </span>
+                  <span v-else class="text-muted small">
+                    {{ t("production.noActions") }}
+                  </span>
                 </td>
               </tr>
             </tbody>
@@ -331,9 +347,11 @@ onMounted(async () => {
       <div class="production-modal">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h5 class="fw-bold mb-1">Start Production</h5>
+            <h5 class="fw-bold mb-1">
+              {{ t("production.startProduction") }}
+            </h5>
             <p class="text-muted small mb-0">
-              Create a manufacturing run using an existing BOM.
+              {{ t("production.startSubtitle") }}
             </p>
           </div>
 
@@ -346,10 +364,14 @@ onMounted(async () => {
 
         <form @submit.prevent="createProductionRun">
           <div class="mb-3">
-            <label class="form-label fw-semibold"> Bill of Materials </label>
+            <label class="form-label fw-semibold">
+              {{ t("production.bom") }}
+            </label>
 
             <select v-model="form.bom_id" class="form-select" required>
-              <option value="" disabled>Select BOM</option>
+              <option value="" disabled>
+                {{ t("production.selectBom") }}
+              </option>
 
               <option v-for="bom in boms" :key="bom.id" :value="bom.id">
                 {{ bom.product_name }} — {{ bom.name }}
@@ -359,7 +381,7 @@ onMounted(async () => {
 
           <div class="mb-3">
             <label class="form-label fw-semibold">
-              Planned Output (Packets)
+              {{ t("production.plannedOutputPackets") }}
             </label>
 
             <input
@@ -368,20 +390,22 @@ onMounted(async () => {
               min="0.001"
               step="0.001"
               class="form-control"
-              placeholder="Enter planned quantity"
+              :placeholder="t('production.plannedQuantityPlaceholder')"
               required
             />
           </div>
 
           <div v-if="plannedMaterials.length" class="mb-4">
-            <h6 class="fw-bold mb-3">Estimated Material Requirements</h6>
+            <h6 class="fw-bold mb-3">
+              {{ t("production.estimatedRequirements") }}
+            </h6>
 
             <div class="table-responsive">
               <table class="table table-sm align-middle">
                 <thead class="table-light">
                   <tr>
-                    <th>Material</th>
-                    <th>Required Quantity</th>
+                    <th>{{ t("production.material") }}</th>
+                    <th>{{ t("production.requiredQuantity") }}</th>
                   </tr>
                 </thead>
 
@@ -401,7 +425,7 @@ onMounted(async () => {
             </div>
 
             <p class="text-muted small mb-0">
-              These quantities are calculated from the selected BOM.
+              {{ t("production.bomCalculationNote") }}
             </p>
           </div>
 
@@ -415,7 +439,7 @@ onMounted(async () => {
               class="btn btn-light"
               @click="showModal = false"
             >
-              Cancel
+              {{ t("production.cancel") }}
             </button>
 
             <button
@@ -428,7 +452,9 @@ onMounted(async () => {
                 Number(form.planned_output) <= 0
               "
             >
-              {{ saving ? "Creating..." : "Create Production Run" }}
+              {{
+                saving ? t("production.creating") : t("production.createRun")
+              }}
             </button>
           </div>
         </form>
@@ -440,7 +466,9 @@ onMounted(async () => {
       <div class="production-modal actuals-modal">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h5 class="fw-bold mb-1">Record Actual Production</h5>
+            <h5 class="fw-bold mb-1">
+              {{ t("production.recordActualProduction") }}
+            </h5>
             <p class="text-muted small mb-0">
               {{ selectedRun?.run_number }}
             </p>
@@ -456,7 +484,7 @@ onMounted(async () => {
         <form @submit.prevent="saveActuals">
           <div class="mb-4">
             <label class="form-label fw-semibold">
-              Actual Output (Packets)
+              {{ t("production.actualOutputPackets") }}
             </label>
 
             <input
@@ -469,19 +497,23 @@ onMounted(async () => {
             />
 
             <small class="text-muted">
-              Planned output: {{ selectedRun?.planned_output }} packets
+              {{ t("production.plannedOutputLabel") }}:
+              {{ selectedRun?.planned_output }}
+              {{ t("production.packets") }}
             </small>
           </div>
 
-          <h6 class="fw-bold mb-3">Actual Material Consumption</h6>
+          <h6 class="fw-bold mb-3">
+            {{ t("production.actualConsumption") }}
+          </h6>
 
           <div class="table-responsive mb-3">
             <table class="table table-sm align-middle">
               <thead class="table-light">
                 <tr>
-                  <th>Material</th>
-                  <th>Planned</th>
-                  <th>Actual Quantity</th>
+                  <th>{{ t("production.material") }}</th>
+                  <th>{{ t("production.planned") }}</th>
+                  <th>{{ t("production.actualQuantity") }}</th>
                 </tr>
               </thead>
 
@@ -520,9 +552,7 @@ onMounted(async () => {
           </div>
 
           <div class="alert alert-info small">
-            Review the actual quantities carefully. Completing production will
-            deduct these materials from inventory and add the actual output to
-            finished goods stock.
+            {{ t("production.inventoryImpactNote") }}
           </div>
 
           <div v-if="modalError" class="alert alert-danger">
@@ -535,11 +565,13 @@ onMounted(async () => {
               class="btn btn-light"
               @click="showActualsModal = false"
             >
-              Cancel
+              {{ t("production.cancel") }}
             </button>
 
             <button type="submit" class="btn btn-primary" :disabled="saving">
-              {{ saving ? "Saving..." : "Save Actuals" }}
+              {{
+                saving ? t("production.saving") : t("production.saveActuals")
+              }}
             </button>
           </div>
         </form>

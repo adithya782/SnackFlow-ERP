@@ -5,17 +5,53 @@
     <!-- Login Card -->
     <div class="card shadow border-0 login-card">
       <div class="card-body p-4 p-md-5">
-        <div class="text-center mb-4">
-          <h2 class="fw-bold text-success">SnackFlow ERP</h2>
-          <p class="text-muted">Manufacturer Management System</p>
+        <button
+          type="button"
+          class="back-home-button"
+          @click="router.push('/')"
+        >
+          ← {{ t("login.backHome") }}
+        </button>
+        <!-- Language Selector -->
+        <div class="login-language-switch">
+          <button
+            type="button"
+            :class="{ active: locale === 'en' }"
+            @click="changeLanguage('en')"
+          >
+            English
+          </button>
+
+          <button
+            type="button"
+            :class="{ active: locale === 'ta' }"
+            @click="changeLanguage('ta')"
+          >
+            தமிழ்
+          </button>
         </div>
 
-        <h4 class="fw-semibold mb-1">Welcome back</h4>
-        <p class="text-muted mb-4">Sign in to continue</p>
+        <div class="text-center mb-4">
+          <h2 class="fw-bold text-success">SnackFlow ERP</h2>
+          <p class="text-muted">
+            {{ t("login.subtitle") }}
+          </p>
+        </div>
+
+        <h4 class="fw-semibold mb-1">
+          {{ t("login.welcomeBack") }}
+        </h4>
+
+        <p class="text-muted mb-4">
+          {{ t("login.signInDescription") }}
+        </p>
 
         <form @submit.prevent="login">
           <div class="mb-3">
-            <label class="form-label">Email address</label>
+            <label class="form-label">
+              {{ t("login.email") }}
+            </label>
+
             <input
               v-model="email"
               type="email"
@@ -26,12 +62,15 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label">Password</label>
+            <label class="form-label">
+              {{ t("login.password") }}
+            </label>
+
             <input
               v-model="password"
               type="password"
               class="form-control"
-              placeholder="Enter your password"
+              :placeholder="t('login.passwordPlaceholder')"
               required
             />
           </div>
@@ -45,12 +84,12 @@
             type="submit"
             :disabled="loading"
           >
-            {{ loading ? "Signing in..." : "Sign In" }}
+            {{ loading ? t("login.signingIn") : t("login.signIn") }}
           </button>
         </form>
 
         <p class="text-muted text-center mt-4 mb-0 small">
-          SnackFlow ERP · Manufacturer Edition
+          SnackFlow ERP · {{ t("login.footer") }}
         </p>
       </div>
     </div>
@@ -77,7 +116,9 @@
             </span>
           </h2>
 
-          <p class="welcome-tagline">YOUR BUSINESS. ONE WORKSPACE.</p>
+          <p class="welcome-tagline">
+            {{ t("login.tagline") }}
+          </p>
         </div>
       </div>
     </Transition>
@@ -85,11 +126,14 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+import { setLanguage } from "../i18n";
 
 const router = useRouter();
+const { t, locale } = useI18n();
 
 const email = ref("");
 const password = ref("");
@@ -97,7 +141,19 @@ const loading = ref(false);
 const errorMessage = ref("");
 const showWelcome = ref(false);
 
-const welcomeLetters = "WELCOME TO SNACKFLOW".split("");
+const welcomeLetters = computed(() => {
+  const text = t("login.introWelcome");
+
+  const segmenter = new Intl.Segmenter(locale.value, {
+    granularity: "grapheme",
+  });
+
+  return Array.from(segmenter.segment(text), (item) => item.segment);
+});
+
+function changeLanguage(language) {
+  setLanguage(language);
+}
 
 async function login() {
   loading.value = true;
@@ -124,7 +180,7 @@ async function login() {
     }, 2600);
   } catch (error) {
     errorMessage.value =
-      error.response?.data?.message || "Unable to connect to the server.";
+      error.response?.data?.message || t("login.connectionError");
   } finally {
     loading.value = false;
   }
@@ -288,5 +344,54 @@ async function login() {
     animation-duration: 0.01ms !important;
     animation-delay: 0ms !important;
   }
+}
+
+.login-language-switch {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+  margin-bottom: 22px;
+  padding: 4px;
+  background: #f0f4f0;
+  border-radius: 25px;
+  width: fit-content;
+  margin-left: auto;
+}
+
+.login-language-switch button {
+  border: none;
+  background: transparent;
+  color: #467456;
+  padding: 7px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.login-language-switch button.active {
+  background: #198754;
+  color: white;
+}
+
+.login-language-switch button:hover {
+  opacity: 0.85;
+}
+
+.back-home-button {
+  border: none;
+  background: transparent;
+  color: #467456;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 0;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.back-home-button:hover {
+  color: #173b2b;
+  transform: translateX(-3px);
 }
 </style>

@@ -3,17 +3,20 @@
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h2 class="fw-bold mb-1">Dashboard</h2>
-        <p class="text-muted mb-0">Welcome back, {{ user?.name }}</p>
+        <h2 class="fw-bold mb-1">{{ $t("dashboard.title") }}</h2>
+        <p class="text-muted mb-0">
+          {{ $t("dashboard.welcome", { name: user?.name || "" }) }}
+        </p>
       </div>
-
-      <button class="btn btn-outline-danger" @click="logout">Logout</button>
+      <button class="btn btn-outline-danger" @click="logout">
+        {{ $t("layout.logout") }}
+      </button>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="text-center py-5">
       <div class="spinner-border text-success"></div>
-      <p class="mt-2 text-muted">Loading dashboard...</p>
+      <p class="mt-2 text-muted">{{ $t("dashboard.loading") }}</p>
     </div>
 
     <div v-else>
@@ -28,9 +31,13 @@
           <div class="col-md-6 col-xl-3">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Inventory Items</p>
+                <p class="text-muted mb-2">
+                  {{ $t("dashboard.inventoryItems") }}
+                </p>
                 <h3 class="fw-bold">{{ inventory.length }}</h3>
-                <small class="text-muted">Active items</small>
+                <small class="text-muted">{{
+                  $t("dashboard.activeItems")
+                }}</small>
               </div>
             </div>
           </div>
@@ -38,12 +45,13 @@
           <div class="col-md-6 col-xl-3">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Total Sales</p>
+                <p class="text-muted mb-2">{{ $t("dashboard.totalSales") }}</p>
                 <h3 class="fw-bold text-success">
                   {{ currency(sales.total_sales) }}
                 </h3>
                 <small class="text-muted">
-                  {{ sales.total_invoices || 0 }} issued invoices
+                  {{ sales.total_invoices || 0 }}
+                  {{ $t("dashboard.issuedInvoices") }}
                 </small>
               </div>
             </div>
@@ -52,11 +60,13 @@
           <div class="col-md-6 col-xl-3">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Outstanding</p>
+                <p class="text-muted mb-2">{{ $t("dashboard.outstanding") }}</p>
                 <h3 class="fw-bold text-danger">
                   {{ currency(receivables.total_outstanding) }}
                 </h3>
-                <small class="text-muted">Pending customer payments</small>
+                <small class="text-muted">{{
+                  $t("dashboard.pendingPayments")
+                }}</small>
               </div>
             </div>
           </div>
@@ -64,9 +74,13 @@
           <div class="col-md-6 col-xl-3">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Low Stock Items</p>
+                <p class="text-muted mb-2">
+                  {{ $t("dashboard.lowStockItems") }}
+                </p>
                 <h3 class="fw-bold text-warning">{{ lowStockItems.length }}</h3>
-                <small class="text-muted">Items needing attention</small>
+                <small class="text-muted">{{
+                  $t("dashboard.itemsNeedingAttention")
+                }}</small>
               </div>
             </div>
           </div>
@@ -79,9 +93,13 @@
           <div class="col-md-6">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Inventory Items</p>
+                <p class="text-muted mb-2">
+                  {{ $t("dashboard.inventoryItems") }}
+                </p>
                 <h3 class="fw-bold">{{ inventory.length }}</h3>
-                <small class="text-muted">Active items</small>
+                <small class="text-muted">{{
+                  $t("dashboard.activeItems")
+                }}</small>
               </div>
             </div>
           </div>
@@ -89,9 +107,13 @@
           <div class="col-md-6">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Low Stock Items</p>
+                <p class="text-muted mb-2">
+                  {{ $t("dashboard.lowStockItems") }}
+                </p>
                 <h3 class="fw-bold text-warning">{{ lowStockItems.length }}</h3>
-                <small class="text-muted">Items needing attention</small>
+                <small class="text-muted">{{
+                  $t("dashboard.itemsNeedingAttention")
+                }}</small>
               </div>
             </div>
           </div>
@@ -104,12 +126,13 @@
           <div class="col-md-6">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Total Sales</p>
+                <p class="text-muted mb-2">{{ $t("dashboard.totalSales") }}</p>
                 <h3 class="fw-bold text-success">
                   {{ currency(sales.total_sales) }}
                 </h3>
                 <small class="text-muted">
-                  {{ sales.total_invoices || 0 }} issued invoices
+                  {{ sales.total_invoices || 0 }}
+                  {{ $t("dashboard.issuedInvoices") }}
                 </small>
               </div>
             </div>
@@ -118,11 +141,13 @@
           <div class="col-md-6">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Outstanding</p>
+                <p class="text-muted mb-2">{{ $t("dashboard.outstanding") }}</p>
                 <h3 class="fw-bold text-danger">
                   {{ currency(receivables.total_outstanding) }}
                 </h3>
-                <small class="text-muted">Pending customer payments</small>
+                <small class="text-muted">{{
+                  $t("dashboard.pendingPayments")
+                }}</small>
               </div>
             </div>
           </div>
@@ -131,15 +156,17 @@
 
       <!-- SALESMAN DASHBOARD -->
       <template v-else-if="user?.role === 'SALESMAN'">
-        <h5 class="fw-bold mb-3">My Sales Overview</h5>
+        <h5 class="fw-bold mb-3">{{ $t("dashboard.mySalesOverview") }}</h5>
 
         <div class="row g-3 mb-4">
           <div class="col-md-6 col-xl-3">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Total Orders</p>
+                <p class="text-muted mb-2">{{ $t("dashboard.totalOrders") }}</p>
                 <h3 class="fw-bold">{{ salesmanOrders.length }}</h3>
-                <small class="text-muted">Orders created by you</small>
+                <small class="text-muted">{{
+                  $t("dashboard.ordersCreatedByYou")
+                }}</small>
               </div>
             </div>
           </div>
@@ -147,9 +174,13 @@
           <div class="col-md-6 col-xl-3">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Pending Approval</p>
+                <p class="text-muted mb-2">
+                  {{ $t("dashboard.pendingApproval") }}
+                </p>
                 <h3 class="fw-bold text-warning">{{ pendingOrders }}</h3>
-                <small class="text-muted">Awaiting Admin review</small>
+                <small class="text-muted">{{
+                  $t("dashboard.awaitingAdminReview")
+                }}</small>
               </div>
             </div>
           </div>
@@ -157,9 +188,13 @@
           <div class="col-md-6 col-xl-3">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Approved Orders</p>
+                <p class="text-muted mb-2">
+                  {{ $t("dashboard.approvedOrders") }}
+                </p>
                 <h3 class="fw-bold text-success">{{ approvedOrders }}</h3>
-                <small class="text-muted">Approved by Admin</small>
+                <small class="text-muted">{{
+                  $t("dashboard.approvedByAdmin")
+                }}</small>
               </div>
             </div>
           </div>
@@ -167,9 +202,13 @@
           <div class="col-md-6 col-xl-3">
             <div class="card dashboard-card border-0 shadow-sm">
               <div class="card-body">
-                <p class="text-muted mb-2">Rejected Orders</p>
+                <p class="text-muted mb-2">
+                  {{ $t("dashboard.rejectedOrders") }}
+                </p>
                 <h3 class="fw-bold text-danger">{{ rejectedOrders }}</h3>
-                <small class="text-muted">Rejected by Admin</small>
+                <small class="text-muted">{{
+                  $t("dashboard.rejectedByAdmin")
+                }}</small>
               </div>
             </div>
           </div>
@@ -179,13 +218,12 @@
         <div class="card border-0 shadow-sm">
           <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5 class="fw-bold mb-0">My Recent Orders</h5>
-
+              <h5 class="fw-bold mb-0">{{ $t("dashboard.myRecentOrders") }}</h5>
               <button
                 class="btn btn-sm btn-outline-success"
                 @click="loadDashboard"
               >
-                Refresh
+                {{ $t("dashboard.refresh") }}
               </button>
             </div>
 
@@ -193,10 +231,10 @@
               <table class="table table-hover align-middle">
                 <thead class="table-light">
                   <tr>
-                    <th>Order Number</th>
-                    <th>Order Date</th>
-                    <th>Amount</th>
-                    <th>Status</th>
+                    <th>{{ $t("dashboard.orderNumber") }}</th>
+                    <th>{{ $t("dashboard.orderDate") }}</th>
+                    <th>{{ $t("dashboard.amount") }}</th>
+                    <th>{{ $t("dashboard.status") }}</th>
                   </tr>
                 </thead>
 
@@ -207,14 +245,14 @@
                     <td>{{ currency(order.total_amount) }}</td>
                     <td>
                       <span class="badge" :class="statusClass(order.status)">
-                        {{ order.status }}
+                        {{ translateStatus(order.status) }}
                       </span>
                     </td>
                   </tr>
 
                   <tr v-if="salesmanOrders.length === 0">
                     <td colspan="4" class="text-center text-muted py-4">
-                      You haven't created any sales orders yet.
+                      {{ $t("dashboard.noSalesOrders") }}
                     </td>
                   </tr>
                 </tbody>
@@ -222,8 +260,7 @@
             </div>
 
             <small v-if="salesmanOrders.length > 5" class="text-muted">
-              Showing the 5 most recent orders. View Sales Orders for the
-              complete list.
+              {{ $t("dashboard.showingRecentOrders") }}
             </small>
           </div>
         </div>
@@ -236,13 +273,14 @@
       >
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold mb-0">Inventory Overview</h5>
-
+            <h5 class="fw-bold mb-0">
+              {{ $t("dashboard.inventoryOverview") }}
+            </h5>
             <button
               class="btn btn-sm btn-outline-success"
               @click="loadDashboard"
             >
-              Refresh
+              {{ $t("dashboard.refresh") }}
             </button>
           </div>
 
@@ -250,12 +288,12 @@
             <table class="table table-hover align-middle">
               <thead class="table-light">
                 <tr>
-                  <th>Item</th>
+                  <th>{{ $t("dashboard.item") }}</th>
                   <th>SKU</th>
-                  <th>Category</th>
-                  <th>Current Stock</th>
-                  <th>Reorder Level</th>
-                  <th>Status</th>
+                  <th>{{ $t("dashboard.category") }}</th>
+                  <th>{{ $t("dashboard.currentStock") }}</th>
+                  <th>{{ $t("dashboard.reorderLevel") }}</th>
+                  <th>{{ $t("dashboard.status") }}</th>
                 </tr>
               </thead>
 
@@ -263,7 +301,7 @@
                 <tr v-for="item in inventory" :key="item.item_id">
                   <td class="fw-semibold">{{ item.name }}</td>
                   <td>{{ item.sku }}</td>
-                  <td>{{ item.category }}</td>
+                  <td>{{ translateCategory(item.category) }}</td>
                   <td>{{ item.current_stock }} {{ item.unit }}</td>
                   <td>{{ item.reorder_level }} {{ item.unit }}</td>
                   <td>
@@ -271,14 +309,18 @@
                       class="badge"
                       :class="item.low_stock ? 'bg-danger' : 'bg-success'"
                     >
-                      {{ item.low_stock ? "Low Stock" : "In Stock" }}
+                      {{
+                        item.low_stock
+                          ? $t("dashboard.lowStock")
+                          : $t("dashboard.inStock")
+                      }}
                     </span>
                   </td>
                 </tr>
 
                 <tr v-if="inventory.length === 0">
                   <td colspan="6" class="text-center text-muted py-4">
-                    No inventory items found.
+                    {{ $t("dashboard.noInventoryItems") }}
                   </td>
                 </tr>
               </tbody>
@@ -293,17 +335,17 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
 
 const router = useRouter();
+const { t } = useI18n();
 
 const user = ref(JSON.parse(localStorage.getItem("user") || "null"));
-
 const inventory = ref([]);
 const sales = ref({});
 const receivables = ref({});
 const salesmanOrders = ref([]);
-
 const loading = ref(true);
 const errorMessage = ref("");
 
@@ -352,6 +394,28 @@ function statusClass(status) {
   return classes[status] || "bg-secondary";
 }
 
+function translateStatus(status) {
+  const translations = {
+    DRAFT: "dashboard.statuses.draft",
+    SUBMITTED: "dashboard.statuses.submitted",
+    APPROVED: "dashboard.statuses.approved",
+    REJECTED: "dashboard.statuses.rejected",
+    CANCELLED: "dashboard.statuses.cancelled",
+  };
+
+  return translations[status] ? t(translations[status]) : status;
+}
+
+function translateCategory(category) {
+  const translations = {
+    FINISHED_GOOD: "dashboard.categories.finishedGood",
+    RAW_MATERIAL: "dashboard.categories.rawMaterial",
+    PACKAGING: "dashboard.categories.packaging",
+  };
+
+  return translations[category] ? t(translations[category]) : category;
+}
+
 async function loadDashboard() {
   loading.value = true;
   errorMessage.value = "";
@@ -388,15 +452,11 @@ async function loadDashboard() {
       receivables.value = receivablesResponse.data;
     } else if (role === "SALESMAN") {
       const response = await api.get("/sales-orders");
-
       salesmanOrders.value = response.data.sales_orders || [];
     }
   } catch (error) {
     console.error("Dashboard error:", error);
-
-    errorMessage.value =
-      error.response?.data?.message ||
-      "Unable to load dashboard data. Please try again.";
+    errorMessage.value = t("dashboard.loadError");
   } finally {
     loading.value = false;
   }

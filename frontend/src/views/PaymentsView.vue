@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const payments = ref([]);
 const invoices = ref([]);
@@ -70,8 +73,27 @@ const formatCurrency = (value) => {
 
 const formatDate = (value) => {
   if (!value) return "-";
-
   return new Date(value).toLocaleDateString("en-IN");
+};
+
+const formatPaymentMethod = (method) => {
+  const translations = {
+    CASH: "payments.methods.cash",
+    UPI: "payments.methods.upi",
+    BANK_TRANSFER: "payments.methods.bankTransfer",
+    CHEQUE: "payments.methods.cheque",
+    OTHER: "payments.methods.other",
+  };
+
+  return translations[method] ? t(translations[method]) : method;
+};
+
+const formatPaymentStatus = (status) => {
+  const translations = {
+    RECEIVED: "payments.statuses.received",
+  };
+
+  return translations[status] ? t(translations[status]) : status;
 };
 
 const clearMessages = () => {
@@ -95,8 +117,7 @@ const loadData = async () => {
     invoices.value = invoiceResponse.data.invoices;
     customers.value = customerResponse.data.customers;
   } catch (err) {
-    error.value =
-      err.response?.data?.message || "Unable to load payment information.";
+    error.value = err.response?.data?.message || t("payments.loadError");
   } finally {
     loading.value = false;
   }
@@ -120,7 +141,7 @@ const recordPayment = async () => {
     !paymentForm.value.amount ||
     Number(paymentForm.value.amount) <= 0
   ) {
-    error.value = "Please select a customer and enter a valid amount.";
+    error.value = t("payments.recordValidationError");
     return;
   }
 
@@ -135,14 +156,13 @@ const recordPayment = async () => {
       notes: paymentForm.value.notes,
     });
 
-    success.value = "Payment recorded successfully.";
-
+    success.value = t("payments.recordSuccess");
     showPaymentForm.value = false;
     resetPaymentForm();
 
     await loadData();
   } catch (err) {
-    error.value = err.response?.data?.message || "Unable to record payment.";
+    error.value = err.response?.data?.message || t("payments.recordError");
   } finally {
     saving.value = false;
   }
@@ -179,9 +199,7 @@ const checkOutstanding = async () => {
 
     outstanding.value = response.data;
   } catch (err) {
-    error.value =
-      err.response?.data?.message ||
-      "Unable to check invoice outstanding amount.";
+    error.value = err.response?.data?.message || t("payments.outstandingError");
   } finally {
     checkingOutstanding.value = false;
   }
@@ -196,7 +214,7 @@ const allocatePayment = async () => {
     !allocationForm.value.allocated_amount ||
     Number(allocationForm.value.allocated_amount) <= 0
   ) {
-    error.value = "Please complete all allocation fields.";
+    error.value = t("payments.allocationValidationError");
     return;
   }
 
@@ -208,12 +226,12 @@ const allocatePayment = async () => {
       allocated_amount: Number(allocationForm.value.allocated_amount),
     });
 
-    success.value = "Payment allocated successfully.";
+    success.value = t("payments.allocationSuccess");
 
     resetAllocation();
     await loadData();
   } catch (err) {
-    error.value = err.response?.data?.message || "Unable to allocate payment.";
+    error.value = err.response?.data?.message || t("payments.allocationError");
   } finally {
     saving.value = false;
   }
@@ -239,8 +257,8 @@ onMounted(loadData);
   <div class="payments-page">
     <div class="page-header">
       <div>
-        <h2>Payments & Receivables</h2>
-        <p>Manage customer payments and invoice allocations.</p>
+        <h2>{{ t("payments.title") }}</h2>
+        <p>{{ t("payments.subtitle") }}</p>
       </div>
 
       <button
@@ -250,7 +268,7 @@ onMounted(loadData);
           clearMessages();
         "
       >
-        + Record Payment
+        + {{ t("payments.recordPayment") }}
       </button>
     </div>
 
@@ -264,22 +282,22 @@ onMounted(loadData);
 
     <div class="summary-grid">
       <div class="summary-card">
-        <span>Total Payments Received</span>
+        <span>{{ t("payments.totalReceived") }}</span>
         <h3>{{ formatCurrency(totalReceived) }}</h3>
       </div>
 
       <div class="summary-card">
-        <span>Issued Invoice Value</span>
+        <span>{{ t("payments.issuedInvoiceValue") }}</span>
         <h3>{{ formatCurrency(totalInvoiceValue) }}</h3>
       </div>
 
       <div class="summary-card">
-        <span>Payment Records</span>
+        <span>{{ t("payments.paymentRecords") }}</span>
         <h3>{{ payments.length }}</h3>
       </div>
 
       <div class="summary-card">
-        <span>Issued Invoices</span>
+        <span>{{ t("payments.issuedInvoices") }}</span>
         <h3>
           {{ invoices.filter((i) => i.status === "ISSUED").length }}
         </h3>
@@ -287,34 +305,37 @@ onMounted(loadData);
     </div>
 
     <!-- PAYMENT RECORDS -->
-
     <div class="content-card">
       <div class="section-header">
         <div>
-          <h4>Payment Records</h4>
-          <p>Money received from customers</p>
+          <h4>{{ t("payments.paymentRecords") }}</h4>
+          <p>{{ t("payments.paymentRecordsSubtitle") }}</p>
         </div>
 
-        <button class="btn-refresh" @click="loadData">Refresh</button>
+        <button class="btn-refresh" @click="loadData">
+          {{ t("payments.refresh") }}
+        </button>
       </div>
 
-      <div v-if="loading" class="empty-state">Loading payments...</div>
+      <div v-if="loading" class="empty-state">
+        {{ t("payments.loading") }}
+      </div>
 
       <div v-else-if="payments.length === 0" class="empty-state">
-        No payment records found.
+        {{ t("payments.noPayments") }}
       </div>
 
       <div v-else class="table-responsive">
         <table class="table align-middle">
           <thead>
             <tr>
-              <th>Payment Number</th>
-              <th>Customer</th>
-              <th>Date</th>
-              <th>Amount</th>
-              <th>Method</th>
-              <th>Reference</th>
-              <th>Status</th>
+              <th>{{ t("payments.paymentNumber") }}</th>
+              <th>{{ t("payments.customer") }}</th>
+              <th>{{ t("payments.date") }}</th>
+              <th>{{ t("payments.amount") }}</th>
+              <th>{{ t("payments.method") }}</th>
+              <th>{{ t("payments.reference") }}</th>
+              <th>{{ t("payments.status") }}</th>
             </tr>
           </thead>
 
@@ -325,7 +346,7 @@ onMounted(loadData);
               </td>
 
               <td>
-                {{ customerMap[payment.customer_id] || "Unknown" }}
+                {{ customerMap[payment.customer_id] || t("payments.unknown") }}
               </td>
 
               <td>{{ formatDate(payment.payment_date) }}</td>
@@ -335,14 +356,14 @@ onMounted(loadData);
               </td>
 
               <td>
-                {{ payment.payment_method.replace("_", " ") }}
+                {{ formatPaymentMethod(payment.payment_method) }}
               </td>
 
               <td>{{ payment.reference_number || "-" }}</td>
 
               <td>
                 <span class="status-badge">
-                  {{ payment.status }}
+                  {{ formatPaymentStatus(payment.status) }}
                 </span>
               </td>
             </tr>
@@ -352,25 +373,26 @@ onMounted(loadData);
     </div>
 
     <!-- PAYMENT ALLOCATION -->
-
     <div class="content-card allocation-card">
       <div class="section-header">
         <div>
-          <h4>Allocate Payment to Invoice</h4>
-          <p>Apply a received payment against a customer's invoice.</p>
+          <h4>{{ t("payments.allocateTitle") }}</h4>
+          <p>{{ t("payments.allocateSubtitle") }}</p>
         </div>
       </div>
 
       <div class="allocation-form">
         <div class="form-group">
-          <label>Select Payment</label>
+          <label>{{ t("payments.selectPayment") }}</label>
 
           <select
             v-model="allocationForm.payment_id"
             class="form-select"
             @change="onPaymentSelected"
           >
-            <option value="">Choose a payment</option>
+            <option value="">
+              {{ t("payments.choosePayment") }}
+            </option>
 
             <option
               v-for="payment in payments.filter((p) => p.status === 'RECEIVED')"
@@ -378,14 +400,14 @@ onMounted(loadData);
               :value="payment.id"
             >
               {{ payment.payment_number }} —
-              {{ customerMap[payment.customer_id] || "Unknown" }} —
+              {{ customerMap[payment.customer_id] || t("payments.unknown") }} —
               {{ formatCurrency(payment.amount) }}
             </option>
           </select>
         </div>
 
         <div class="form-group">
-          <label>Select Invoice</label>
+          <label>{{ t("payments.selectInvoice") }}</label>
 
           <select
             v-model="allocationForm.invoice_id"
@@ -393,7 +415,9 @@ onMounted(loadData);
             :disabled="!selectedPayment"
             @change="checkOutstanding"
           >
-            <option value="">Choose an invoice</option>
+            <option value="">
+              {{ t("payments.chooseInvoice") }}
+            </option>
 
             <option
               v-for="invoice in eligibleInvoices"
@@ -406,23 +430,23 @@ onMounted(loadData);
           </select>
 
           <small v-if="selectedPayment">
-            Only issued invoices belonging to the selected customer are shown.
+            {{ t("payments.eligibleInvoicesNote") }}
           </small>
         </div>
 
         <div v-if="outstanding" class="outstanding-panel">
           <div>
-            <span>Invoice Total</span>
+            <span>{{ t("payments.invoiceTotal") }}</span>
             <strong>{{ formatCurrency(outstanding.invoice_total) }}</strong>
           </div>
 
           <div>
-            <span>Already Paid</span>
+            <span>{{ t("payments.alreadyPaid") }}</span>
             <strong>{{ formatCurrency(outstanding.paid_amount) }}</strong>
           </div>
 
           <div>
-            <span>Outstanding</span>
+            <span>{{ t("payments.outstanding") }}</span>
             <strong class="outstanding-value">
               {{ formatCurrency(outstanding.outstanding_amount) }}
             </strong>
@@ -430,11 +454,11 @@ onMounted(loadData);
         </div>
 
         <div v-if="checkingOutstanding" class="text-muted">
-          Checking invoice balance...
+          {{ t("payments.checkingBalance") }}
         </div>
 
         <div class="form-group">
-          <label>Allocation Amount (₹)</label>
+          <label>{{ t("payments.allocationAmount") }}</label>
 
           <input
             v-model="allocationForm.allocated_amount"
@@ -442,14 +466,13 @@ onMounted(loadData);
             min="0.01"
             step="0.01"
             class="form-control"
-            placeholder="Enter amount to allocate"
+            :placeholder="t('payments.allocationPlaceholder')"
             :disabled="!outstanding"
           />
         </div>
 
         <div class="allocation-note">
-          The backend validates the available payment amount and invoice
-          outstanding balance before saving an allocation.
+          {{ t("payments.allocationNote") }}
         </div>
 
         <button
@@ -457,13 +480,12 @@ onMounted(loadData);
           @click="allocatePayment"
           :disabled="saving || !outstanding"
         >
-          {{ saving ? "Processing..." : "Allocate Payment" }}
+          {{ saving ? t("payments.processing") : t("payments.allocateButton") }}
         </button>
       </div>
     </div>
 
     <!-- RECORD PAYMENT MODAL -->
-
     <div
       v-if="showPaymentForm"
       class="modal-overlay"
@@ -472,25 +494,25 @@ onMounted(loadData);
       <div class="payment-modal">
         <div class="modal-header-custom">
           <div>
-            <h4>Record Customer Payment</h4>
-            <p>Enter the payment received from a customer.</p>
+            <h4>{{ t("payments.recordTitle") }}</h4>
+            <p>{{ t("payments.recordSubtitle") }}</p>
           </div>
 
-          <button class="close-btn" @click="showPaymentForm = false">
-            &times;
-          </button>
+          <button class="close-btn" @click="showPaymentForm = false">×</button>
         </div>
 
         <form @submit.prevent="recordPayment">
           <div class="form-group">
-            <label>Customer *</label>
+            <label>{{ t("payments.customerRequired") }}</label>
 
             <select
               v-model="paymentForm.customer_id"
               class="form-select"
               required
             >
-              <option value="">Select customer</option>
+              <option value="">
+                {{ t("payments.selectCustomer") }}
+              </option>
 
               <option
                 v-for="customer in customers.filter((c) => c.is_active)"
@@ -503,7 +525,7 @@ onMounted(loadData);
           </div>
 
           <div class="form-group">
-            <label>Amount (₹) *</label>
+            <label>{{ t("payments.amountRequired") }}</label>
 
             <input
               v-model="paymentForm.amount"
@@ -511,13 +533,13 @@ onMounted(loadData);
               min="0.01"
               step="0.01"
               class="form-control"
-              placeholder="Enter amount received"
+              :placeholder="t('payments.amountPlaceholder')"
               required
             />
           </div>
 
           <div class="form-group">
-            <label>Payment Method *</label>
+            <label>{{ t("payments.methodRequired") }}</label>
 
             <select
               v-model="paymentForm.payment_method"
@@ -529,30 +551,30 @@ onMounted(loadData);
                 :key="method"
                 :value="method"
               >
-                {{ method.replace("_", " ") }}
+                {{ formatPaymentMethod(method) }}
               </option>
             </select>
           </div>
 
           <div class="form-group">
-            <label>Reference Number</label>
+            <label>{{ t("payments.referenceNumber") }}</label>
 
             <input
               v-model="paymentForm.reference_number"
               type="text"
               class="form-control"
-              placeholder="UPI transaction ID / cheque number"
+              :placeholder="t('payments.referencePlaceholder')"
             />
           </div>
 
           <div class="form-group">
-            <label>Notes</label>
+            <label>{{ t("payments.notes") }}</label>
 
             <textarea
               v-model="paymentForm.notes"
               class="form-control"
               rows="3"
-              placeholder="Optional payment notes"
+              :placeholder="t('payments.notesPlaceholder')"
             ></textarea>
           </div>
 
@@ -562,11 +584,11 @@ onMounted(loadData);
               class="btn-cancel"
               @click="showPaymentForm = false"
             >
-              Cancel
+              {{ t("payments.cancel") }}
             </button>
 
             <button type="submit" class="btn-primary-custom" :disabled="saving">
-              {{ saving ? "Saving..." : "Save Payment" }}
+              {{ saving ? t("payments.saving") : t("payments.savePayment") }}
             </button>
           </div>
         </form>

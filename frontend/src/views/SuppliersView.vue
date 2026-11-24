@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const suppliers = ref([]);
 const loading = ref(false);
@@ -47,11 +50,12 @@ async function loadSuppliers() {
 
   try {
     const response = await api.get("/suppliers");
+
     suppliers.value = Array.isArray(response.data)
       ? response.data
       : response.data.suppliers || [];
   } catch (error) {
-    alert(error.response?.data?.message || "Failed to load suppliers");
+    alert(error.response?.data?.message || t("suppliers.loadError"));
   } finally {
     loading.value = false;
   }
@@ -66,6 +70,7 @@ function openAddModal() {
 
 function openEditModal(supplier) {
   editingSupplier.value = supplier;
+
   form.value = {
     business_name: supplier.business_name || "",
     contact_person: supplier.contact_person || "",
@@ -76,6 +81,7 @@ function openEditModal(supplier) {
     city: supplier.city || "",
     state: supplier.state || "",
   };
+
   formError.value = "";
   showModal.value = true;
 }
@@ -101,17 +107,18 @@ async function saveSupplier() {
     closeModal();
     await loadSuppliers();
   } catch (error) {
-    formError.value =
-      error.response?.data?.message || "Failed to save supplier";
+    formError.value = error.response?.data?.message || t("suppliers.saveError");
   } finally {
     saving.value = false;
   }
 }
 
 async function toggleStatus(supplier) {
-  const action = supplier.is_active ? "deactivate" : "activate";
+  const action = supplier.is_active
+    ? t("suppliers.deactivate").toLowerCase()
+    : t("suppliers.activate").toLowerCase();
 
-  if (!confirm(`Are you sure you want to ${action} this supplier?`)) {
+  if (!confirm(t("suppliers.confirmStatus", { action }))) {
     return;
   }
 
@@ -122,7 +129,7 @@ async function toggleStatus(supplier) {
 
     await loadSuppliers();
   } catch (error) {
-    alert(error.response?.data?.message || "Failed to update status");
+    alert(error.response?.data?.message || t("suppliers.statusError"));
   }
 }
 
@@ -135,14 +142,14 @@ onMounted(loadSuppliers);
       class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4"
     >
       <div>
-        <h3 class="fw-bold mb-1">Suppliers</h3>
+        <h3 class="fw-bold mb-1">{{ t("suppliers.title") }}</h3>
         <p class="text-muted mb-0">
-          Manage businesses supplying your raw materials
+          {{ t("suppliers.subtitle") }}
         </p>
       </div>
 
       <button class="btn btn-success" @click="openAddModal">
-        + Add Supplier
+        + {{ t("suppliers.addSupplier") }}
       </button>
     </div>
 
@@ -153,34 +160,38 @@ onMounted(loadSuppliers);
             <input
               v-model="search"
               class="form-control"
-              placeholder="Search by supplier, contact, phone or city..."
+              :placeholder="t('suppliers.searchPlaceholder')"
             />
           </div>
         </div>
 
         <div v-if="loading" class="text-center py-5 text-muted">
-          Loading suppliers...
+          {{ t("suppliers.loading") }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover align-middle">
             <thead class="table-light">
               <tr>
-                <th>Supplier Name</th>
-                <th>Contact Person</th>
-                <th>Phone</th>
-                <th>City</th>
-                <th>Status</th>
-                <th class="text-end">Actions</th>
+                <th>{{ t("suppliers.supplierName") }}</th>
+                <th>{{ t("suppliers.contactPerson") }}</th>
+                <th>{{ t("suppliers.phone") }}</th>
+                <th>{{ t("suppliers.city") }}</th>
+                <th>{{ t("suppliers.status") }}</th>
+                <th class="text-end">{{ t("suppliers.actions") }}</th>
               </tr>
             </thead>
 
             <tbody>
               <tr v-for="supplier in filteredSuppliers" :key="supplier.id">
-                <td class="fw-semibold">{{ supplier.business_name }}</td>
+                <td class="fw-semibold">
+                  {{ supplier.business_name }}
+                </td>
+
                 <td>{{ supplier.contact_person || "—" }}</td>
                 <td>{{ supplier.phone || "—" }}</td>
                 <td>{{ supplier.city || "—" }}</td>
+
                 <td>
                   <span
                     class="badge"
@@ -190,15 +201,20 @@ onMounted(loadSuppliers);
                         : 'text-bg-secondary'
                     "
                   >
-                    {{ supplier.is_active ? "Active" : "Inactive" }}
+                    {{
+                      supplier.is_active
+                        ? t("suppliers.active")
+                        : t("suppliers.inactive")
+                    }}
                   </span>
                 </td>
+
                 <td class="text-end">
                   <button
                     class="btn btn-sm btn-outline-primary me-2"
                     @click="openEditModal(supplier)"
                   >
-                    Edit
+                    {{ t("suppliers.edit") }}
                   </button>
 
                   <button
@@ -210,14 +226,18 @@ onMounted(loadSuppliers);
                     "
                     @click="toggleStatus(supplier)"
                   >
-                    {{ supplier.is_active ? "Deactivate" : "Activate" }}
+                    {{
+                      supplier.is_active
+                        ? t("suppliers.deactivate")
+                        : t("suppliers.activate")
+                    }}
                   </button>
                 </td>
               </tr>
 
               <tr v-if="filteredSuppliers.length === 0">
                 <td colspan="6" class="text-center text-muted py-4">
-                  No suppliers found.
+                  {{ t("suppliers.noSuppliers") }}
                 </td>
               </tr>
             </tbody>
@@ -226,12 +246,17 @@ onMounted(loadSuppliers);
       </div>
     </div>
 
+    <!-- Add/Edit Supplier Modal -->
     <div v-if="showModal" class="modal-backdrop-custom">
       <div class="supplier-modal-dialog">
         <div class="modal-content border-0 shadow">
           <div class="modal-header">
             <h5 class="modal-title fw-bold">
-              {{ editingSupplier ? "Edit Supplier" : "Add New Supplier" }}
+              {{
+                editingSupplier
+                  ? t("suppliers.editSupplier")
+                  : t("suppliers.addNewSupplier")
+              }}
             </h5>
 
             <button
@@ -244,7 +269,9 @@ onMounted(loadSuppliers);
           <form @submit.prevent="saveSupplier">
             <div class="modal-body">
               <div class="mb-3">
-                <label class="form-label">Supplier Name *</label>
+                <label class="form-label">
+                  {{ t("suppliers.supplierName") }} *
+                </label>
                 <input
                   v-model="form.business_name"
                   class="form-control"
@@ -253,18 +280,24 @@ onMounted(loadSuppliers);
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Contact Person</label>
+                <label class="form-label">
+                  {{ t("suppliers.contactPerson") }}
+                </label>
                 <input v-model="form.contact_person" class="form-control" />
               </div>
 
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Phone</label>
+                  <label class="form-label">
+                    {{ t("suppliers.phone") }}
+                  </label>
                   <input v-model="form.phone" class="form-control" />
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Email</label>
+                  <label class="form-label">
+                    {{ t("suppliers.email") }}
+                  </label>
                   <input
                     v-model="form.email"
                     type="email"
@@ -274,12 +307,16 @@ onMounted(loadSuppliers);
               </div>
 
               <div class="mb-3">
-                <label class="form-label">GSTIN</label>
+                <label class="form-label">
+                  {{ t("suppliers.gstin") }}
+                </label>
                 <input v-model="form.gstin" class="form-control" />
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Address</label>
+                <label class="form-label">
+                  {{ t("suppliers.address") }}
+                </label>
                 <textarea
                   v-model="form.address"
                   class="form-control"
@@ -289,12 +326,16 @@ onMounted(loadSuppliers);
 
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">City</label>
+                  <label class="form-label">
+                    {{ t("suppliers.city") }}
+                  </label>
                   <input v-model="form.city" class="form-control" />
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">State</label>
+                  <label class="form-label">
+                    {{ t("suppliers.state") }}
+                  </label>
                   <input v-model="form.state" class="form-control" />
                 </div>
               </div>
@@ -310,11 +351,13 @@ onMounted(loadSuppliers);
                 class="btn btn-outline-secondary"
                 @click="closeModal"
               >
-                Cancel
+                {{ t("suppliers.cancel") }}
               </button>
 
               <button type="submit" class="btn btn-success" :disabled="saving">
-                {{ saving ? "Saving..." : "Save Supplier" }}
+                {{
+                  saving ? t("suppliers.saving") : t("suppliers.saveSupplier")
+                }}
               </button>
             </div>
           </form>

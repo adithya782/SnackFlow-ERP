@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const customers = ref([]);
 const loading = ref(false);
@@ -47,11 +50,12 @@ async function loadCustomers() {
 
   try {
     const response = await api.get("/customers");
+
     customers.value = Array.isArray(response.data)
       ? response.data
       : response.data.customers || [];
   } catch (error) {
-    alert(error.response?.data?.message || "Failed to load customers");
+    alert(error.response?.data?.message || t("customers.loadError"));
   } finally {
     loading.value = false;
   }
@@ -66,6 +70,7 @@ function openAddModal() {
 
 function openEditModal(customer) {
   editingCustomer.value = customer;
+
   form.value = {
     business_name: customer.business_name || "",
     contact_person: customer.contact_person || "",
@@ -76,6 +81,7 @@ function openEditModal(customer) {
     city: customer.city || "",
     state: customer.state || "",
   };
+
   formError.value = "";
   showModal.value = true;
 }
@@ -101,17 +107,18 @@ async function saveCustomer() {
     closeModal();
     await loadCustomers();
   } catch (error) {
-    formError.value =
-      error.response?.data?.message || "Failed to save customer";
+    formError.value = error.response?.data?.message || t("customers.saveError");
   } finally {
     saving.value = false;
   }
 }
 
 async function toggleStatus(customer) {
-  const action = customer.is_active ? "deactivate" : "activate";
+  const action = customer.is_active
+    ? t("customers.deactivate").toLowerCase()
+    : t("customers.activate").toLowerCase();
 
-  if (!confirm(`Are you sure you want to ${action} this customer?`)) {
+  if (!confirm(t("customers.confirmStatus", { action }))) {
     return;
   }
 
@@ -122,7 +129,7 @@ async function toggleStatus(customer) {
 
     await loadCustomers();
   } catch (error) {
-    alert(error.response?.data?.message || "Failed to update status");
+    alert(error.response?.data?.message || t("customers.statusError"));
   }
 }
 
@@ -135,12 +142,14 @@ onMounted(loadCustomers);
       class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4"
     >
       <div>
-        <h3 class="fw-bold mb-1">Customers</h3>
-        <p class="text-muted mb-0">Manage your retailer and customer records</p>
+        <h3 class="fw-bold mb-1">{{ t("customers.title") }}</h3>
+        <p class="text-muted mb-0">
+          {{ t("customers.subtitle") }}
+        </p>
       </div>
 
       <button class="btn btn-success" @click="openAddModal">
-        + Add Customer
+        + {{ t("customers.addCustomer") }}
       </button>
     </div>
 
@@ -151,34 +160,38 @@ onMounted(loadCustomers);
             <input
               v-model="search"
               class="form-control"
-              placeholder="Search by business, contact, phone or city..."
+              :placeholder="t('customers.searchPlaceholder')"
             />
           </div>
         </div>
 
         <div v-if="loading" class="text-center py-5 text-muted">
-          Loading customers...
+          {{ t("customers.loading") }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover align-middle">
             <thead class="table-light">
               <tr>
-                <th>Business Name</th>
-                <th>Contact Person</th>
-                <th>Phone</th>
-                <th>City</th>
-                <th>Status</th>
-                <th class="text-end">Actions</th>
+                <th>{{ t("customers.businessName") }}</th>
+                <th>{{ t("customers.contactPerson") }}</th>
+                <th>{{ t("customers.phone") }}</th>
+                <th>{{ t("customers.city") }}</th>
+                <th>{{ t("customers.status") }}</th>
+                <th class="text-end">{{ t("customers.actions") }}</th>
               </tr>
             </thead>
 
             <tbody>
               <tr v-for="customer in filteredCustomers" :key="customer.id">
-                <td class="fw-semibold">{{ customer.business_name }}</td>
+                <td class="fw-semibold">
+                  {{ customer.business_name }}
+                </td>
+
                 <td>{{ customer.contact_person || "—" }}</td>
                 <td>{{ customer.phone || "—" }}</td>
                 <td>{{ customer.city || "—" }}</td>
+
                 <td>
                   <span
                     class="badge"
@@ -188,15 +201,20 @@ onMounted(loadCustomers);
                         : 'text-bg-secondary'
                     "
                   >
-                    {{ customer.is_active ? "Active" : "Inactive" }}
+                    {{
+                      customer.is_active
+                        ? t("customers.active")
+                        : t("customers.inactive")
+                    }}
                   </span>
                 </td>
+
                 <td class="text-end">
                   <button
                     class="btn btn-sm btn-outline-primary me-2"
                     @click="openEditModal(customer)"
                   >
-                    Edit
+                    {{ t("customers.edit") }}
                   </button>
 
                   <button
@@ -208,14 +226,18 @@ onMounted(loadCustomers);
                     "
                     @click="toggleStatus(customer)"
                   >
-                    {{ customer.is_active ? "Deactivate" : "Activate" }}
+                    {{
+                      customer.is_active
+                        ? t("customers.deactivate")
+                        : t("customers.activate")
+                    }}
                   </button>
                 </td>
               </tr>
 
               <tr v-if="filteredCustomers.length === 0">
                 <td colspan="6" class="text-center text-muted py-4">
-                  No customers found.
+                  {{ t("customers.noCustomers") }}
                 </td>
               </tr>
             </tbody>
@@ -230,7 +252,11 @@ onMounted(loadCustomers);
         <div class="modal-content border-0 shadow">
           <div class="modal-header">
             <h5 class="modal-title fw-bold">
-              {{ editingCustomer ? "Edit Customer" : "Add New Customer" }}
+              {{
+                editingCustomer
+                  ? t("customers.editCustomer")
+                  : t("customers.addNewCustomer")
+              }}
             </h5>
 
             <button
@@ -243,7 +269,9 @@ onMounted(loadCustomers);
           <form @submit.prevent="saveCustomer">
             <div class="modal-body">
               <div class="mb-3">
-                <label class="form-label">Business Name *</label>
+                <label class="form-label">
+                  {{ t("customers.businessName") }} *
+                </label>
                 <input
                   v-model="form.business_name"
                   class="form-control"
@@ -252,18 +280,24 @@ onMounted(loadCustomers);
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Contact Person</label>
+                <label class="form-label">
+                  {{ t("customers.contactPerson") }}
+                </label>
                 <input v-model="form.contact_person" class="form-control" />
               </div>
 
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Phone</label>
+                  <label class="form-label">
+                    {{ t("customers.phone") }}
+                  </label>
                   <input v-model="form.phone" class="form-control" />
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Email</label>
+                  <label class="form-label">
+                    {{ t("customers.email") }}
+                  </label>
                   <input
                     v-model="form.email"
                     type="email"
@@ -273,12 +307,16 @@ onMounted(loadCustomers);
               </div>
 
               <div class="mb-3">
-                <label class="form-label">GSTIN</label>
+                <label class="form-label">
+                  {{ t("customers.gstin") }}
+                </label>
                 <input v-model="form.gstin" class="form-control" />
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Address</label>
+                <label class="form-label">
+                  {{ t("customers.address") }}
+                </label>
                 <textarea
                   v-model="form.address"
                   class="form-control"
@@ -288,12 +326,16 @@ onMounted(loadCustomers);
 
               <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">City</label>
+                  <label class="form-label">
+                    {{ t("customers.city") }}
+                  </label>
                   <input v-model="form.city" class="form-control" />
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">State</label>
+                  <label class="form-label">
+                    {{ t("customers.state") }}
+                  </label>
                   <input v-model="form.state" class="form-control" />
                 </div>
               </div>
@@ -309,11 +351,13 @@ onMounted(loadCustomers);
                 class="btn btn-outline-secondary"
                 @click="closeModal"
               >
-                Cancel
+                {{ t("customers.cancel") }}
               </button>
 
               <button type="submit" class="btn btn-success" :disabled="saving">
-                {{ saving ? "Saving..." : "Save Customer" }}
+                {{
+                  saving ? t("customers.saving") : t("customers.saveCustomer")
+                }}
               </button>
             </div>
           </form>

@@ -1,15 +1,16 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const stockItems = ref([]);
 const movements = ref([]);
-
 const loading = ref(true);
 const movementLoading = ref(false);
 const error = ref("");
 const movementError = ref("");
-
 const searchQuery = ref("");
 const selectedCategory = ref("ALL");
 
@@ -53,7 +54,7 @@ async function fetchStock() {
     const response = await api.get("/inventory/stock");
     stockItems.value = response.data.stock;
   } catch (err) {
-    error.value = err.response?.data?.message || "Failed to load inventory.";
+    error.value = err.response?.data?.message || t("inventory.loadError");
   } finally {
     loading.value = false;
   }
@@ -68,7 +69,7 @@ async function fetchMovements() {
     movements.value = response.data.movements;
   } catch (err) {
     movementError.value =
-      err.response?.data?.message || "Failed to load stock movement history.";
+      err.response?.data?.message || t("inventory.movementLoadError");
   } finally {
     movementLoading.value = false;
   }
@@ -79,7 +80,13 @@ async function refreshInventory() {
 }
 
 function formatCategory(category) {
-  return category.replaceAll("_", " ");
+  const translations = {
+    FINISHED_GOOD: "dashboard.categories.finishedGood",
+    RAW_MATERIAL: "dashboard.categories.rawMaterial",
+    PACKAGING: "dashboard.categories.packaging",
+  };
+
+  return translations[category] ? t(translations[category]) : category;
 }
 
 function formatDate(value) {
@@ -92,11 +99,21 @@ function formatDate(value) {
 }
 
 function formatMovementType(type) {
-  return type === "IN" ? "Stock In" : "Stock Out";
+  return type === "IN" ? t("inventory.stockIn") : t("inventory.stockOut");
 }
 
 function formatReferenceType(type) {
-  return (type || "").replaceAll("_", " ");
+  const translations = {
+    OPENING: "references.opening",
+    PURCHASE: "references.purchase",
+    PRODUCTION: "references.production",
+    DISPATCH: "references.dispatch",
+    ADJUSTMENT: "references.adjustment",
+  };
+
+  return translations[type]
+    ? t(translations[type])
+    : (type || "").replaceAll("_", " ");
 }
 
 onMounted(refreshInventory);
@@ -107,9 +124,9 @@ onMounted(refreshInventory);
     <!-- PAGE HEADER -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h3 class="fw-bold mb-1">Inventory</h3>
+        <h3 class="fw-bold mb-1">{{ $t("inventory.title") }}</h3>
         <p class="text-muted mb-0">
-          Monitor your stock levels and availability.
+          {{ $t("inventory.subtitle") }}
         </p>
       </div>
 
@@ -118,7 +135,7 @@ onMounted(refreshInventory);
         @click="refreshInventory"
         :disabled="loading || movementLoading"
       >
-        ↻ Refresh
+        ↻ {{ $t("inventory.refresh") }}
       </button>
     </div>
 
@@ -127,7 +144,9 @@ onMounted(refreshInventory);
       <div class="col-md-6">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted mb-1">Total Items</p>
+            <p class="text-muted mb-1">
+              {{ $t("inventory.totalItems") }}
+            </p>
             <h3 class="fw-bold mb-0">{{ totalItems }}</h3>
           </div>
         </div>
@@ -136,8 +155,12 @@ onMounted(refreshInventory);
       <div class="col-md-6">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted mb-1">Low Stock Items</p>
-            <h3 class="fw-bold mb-0 text-danger">{{ lowStockCount }}</h3>
+            <p class="text-muted mb-1">
+              {{ $t("inventory.lowStockItems") }}
+            </p>
+            <h3 class="fw-bold mb-0 text-danger">
+              {{ lowStockCount }}
+            </h3>
           </div>
         </div>
       </div>
@@ -152,7 +175,7 @@ onMounted(refreshInventory);
               v-model="searchQuery"
               type="text"
               class="form-control"
-              placeholder="Search by item name or SKU..."
+              :placeholder="$t('inventory.searchPlaceholder')"
             />
           </div>
 
@@ -165,7 +188,7 @@ onMounted(refreshInventory);
               >
                 {{
                   category === "ALL"
-                    ? "All Categories"
+                    ? $t("inventory.allCategories")
                     : formatCategory(category)
                 }}
               </option>
@@ -178,7 +201,9 @@ onMounted(refreshInventory);
     <!-- INVENTORY TABLE -->
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-body">
-        <div v-if="loading" class="text-center py-5">Loading inventory...</div>
+        <div v-if="loading" class="text-center py-5">
+          {{ $t("inventory.loading") }}
+        </div>
 
         <div v-else-if="error" class="alert alert-danger mb-0">
           {{ error }}
@@ -188,19 +213,19 @@ onMounted(refreshInventory);
           v-else-if="filteredItems.length === 0"
           class="text-center py-5 text-muted"
         >
-          No inventory items found.
+          {{ $t("inventory.noItems") }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table align-middle table-hover">
             <thead class="table-light">
               <tr>
-                <th>Item</th>
+                <th>{{ $t("inventory.item") }}</th>
                 <th>SKU</th>
-                <th>Category</th>
-                <th>Current Stock</th>
-                <th>Reorder Level</th>
-                <th>Status</th>
+                <th>{{ $t("inventory.category") }}</th>
+                <th>{{ $t("inventory.currentStock") }}</th>
+                <th>{{ $t("inventory.reorderLevel") }}</th>
+                <th>{{ $t("inventory.status") }}</th>
               </tr>
             </thead>
 
@@ -225,7 +250,11 @@ onMounted(refreshInventory);
                     class="badge"
                     :class="isLowStock(item) ? 'bg-danger' : 'bg-success'"
                   >
-                    {{ isLowStock(item) ? "Low Stock" : "In Stock" }}
+                    {{
+                      isLowStock(item)
+                        ? $t("inventory.lowStock")
+                        : $t("inventory.inStock")
+                    }}
                   </span>
                 </td>
               </tr>
@@ -242,19 +271,21 @@ onMounted(refreshInventory);
           class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3"
         >
           <div>
-            <h5 class="fw-bold mb-1">Stock Movement History</h5>
+            <h5 class="fw-bold mb-1">
+              {{ $t("inventory.movementHistory") }}
+            </h5>
             <p class="text-muted small mb-0">
-              Track stock changes and their originating documents.
+              {{ $t("inventory.movementSubtitle") }}
             </p>
           </div>
 
           <span class="badge bg-light text-dark border">
-            {{ movements.length }} recent movements
+            {{ movements.length }} {{ $t("inventory.recentMovements") }}
           </span>
         </div>
 
         <div v-if="movementLoading" class="text-center py-4">
-          Loading stock movements...
+          {{ $t("inventory.loadingMovements") }}
         </div>
 
         <div v-else-if="movementError" class="alert alert-danger mb-0">
@@ -265,20 +296,20 @@ onMounted(refreshInventory);
           v-else-if="movements.length === 0"
           class="text-center text-muted py-4"
         >
-          No stock movements recorded yet.
+          {{ $t("inventory.noMovements") }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover align-middle">
             <thead class="table-light">
               <tr>
-                <th>Date & Time</th>
-                <th>Item</th>
-                <th>Movement</th>
-                <th>Quantity</th>
-                <th>Source Type</th>
-                <th>Source ID</th>
-                <th>Notes</th>
+                <th>{{ $t("inventory.dateTime") }}</th>
+                <th>{{ $t("inventory.item") }}</th>
+                <th>{{ $t("inventory.movement") }}</th>
+                <th>{{ $t("inventory.quantity") }}</th>
+                <th>{{ $t("inventory.sourceType") }}</th>
+                <th>{{ $t("inventory.sourceId") }}</th>
+                <th>{{ $t("inventory.notes") }}</th>
               </tr>
             </thead>
 
@@ -333,7 +364,9 @@ onMounted(refreshInventory);
         </div>
 
         <p v-if="movements.length > 0" class="text-muted small mb-0 mt-2">
-          Showing the latest {{ movements.length }} stock movements.
+          {{ $t("inventory.showingLatest") }}
+          {{ movements.length }}
+          {{ $t("inventory.stockMovements") }}
         </p>
       </div>
     </div>

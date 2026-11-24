@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const dispatches = ref([]);
 const invoices = ref([]);
@@ -10,6 +13,7 @@ const loading = ref(true);
 const saving = ref(false);
 const error = ref("");
 const success = ref("");
+
 const searchQuery = ref("");
 const statusFilter = ref("ALL");
 const showModal = ref(false);
@@ -47,6 +51,7 @@ const availableInvoices = computed(() =>
 const filteredDispatches = computed(() =>
   dispatches.value.filter((dispatch) => {
     const invoice = invoiceMap.value[dispatch.invoice_id];
+
     const customerName = invoice
       ? customerMap.value[invoice.customer_id] || ""
       : "";
@@ -86,8 +91,20 @@ function statusClass(status) {
   return status === "DISPATCHED" ? "bg-success" : "bg-warning text-dark";
 }
 
+function formatStatus(status) {
+  const translations = {
+    PREPARED: "dispatches.statuses.prepared",
+    DISPATCHED: "dispatches.statuses.dispatched",
+  };
+
+  return translations[status] ? t(translations[status]) : status;
+}
+
 function getInvoiceNumber(invoiceId) {
-  return invoiceMap.value[invoiceId]?.invoice_number || `Invoice #${invoiceId}`;
+  return (
+    invoiceMap.value[invoiceId]?.invoice_number ||
+    t("dispatches.invoiceFallback", { id: invoiceId })
+  );
 }
 
 function getCustomerName(invoiceId) {
@@ -96,7 +113,8 @@ function getCustomerName(invoiceId) {
   if (!invoice) return "-";
 
   return (
-    customerMap.value[invoice.customer_id] || `Customer #${invoice.customer_id}`
+    customerMap.value[invoice.customer_id] ||
+    t("dispatches.customerFallback", { id: invoice.customer_id })
   );
 }
 
@@ -131,12 +149,10 @@ async function loadData() {
 
     // Dispatch list endpoint returns a direct array.
     dispatches.value = dispatchResponse.data;
-
     invoices.value = invoiceResponse.data.invoices;
     customers.value = customerResponse.data.customers;
   } catch (err) {
-    error.value =
-      err.response?.data?.message || "Failed to load dispatch information.";
+    error.value = err.response?.data?.message || t("dispatches.loadError");
   } finally {
     loading.value = false;
   }
@@ -147,7 +163,7 @@ async function createDispatch() {
   success.value = "";
 
   if (!form.value.invoice_id) {
-    error.value = "Please select an issued invoice.";
+    error.value = t("dispatches.selectInvoiceError");
     return;
   }
 
@@ -164,13 +180,14 @@ async function createDispatch() {
 
     const response = await api.post("/dispatches", payload);
 
-    success.value = `Dispatch ${response.data.dispatch.dispatch_number} prepared successfully.`;
+    success.value = t("dispatches.createSuccess", {
+      number: response.data.dispatch.dispatch_number,
+    });
 
     showModal.value = false;
-
     await loadData();
   } catch (err) {
-    error.value = err.response?.data?.message || "Failed to create dispatch.";
+    error.value = err.response?.data?.message || t("dispatches.createError");
   } finally {
     saving.value = false;
   }
@@ -180,7 +197,9 @@ async function markDispatched(dispatch) {
   if (dispatch.status !== "PREPARED") return;
 
   const confirmed = confirm(
-    `Mark ${dispatch.dispatch_number} as dispatched? Finished goods inventory will be deducted.`,
+    t("dispatches.confirmDispatch", {
+      number: dispatch.dispatch_number,
+    }),
   );
 
   if (!confirmed) return;
@@ -191,11 +210,13 @@ async function markDispatched(dispatch) {
   try {
     await api.post(`/dispatches/${dispatch.id}/dispatch`);
 
-    success.value = `${dispatch.dispatch_number} dispatched successfully. Inventory updated.`;
+    success.value = t("dispatches.dispatchSuccess", {
+      number: dispatch.dispatch_number,
+    });
 
     await loadData();
   } catch (err) {
-    error.value = err.response?.data?.message || "Failed to dispatch goods.";
+    error.value = err.response?.data?.message || t("dispatches.dispatchError");
   }
 }
 
@@ -207,12 +228,14 @@ onMounted(loadData);
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h3 class="fw-bold mb-1">Dispatches</h3>
-        <p class="text-muted mb-0">Prepare and track customer deliveries.</p>
+        <h3 class="fw-bold mb-1">{{ t("dispatches.title") }}</h3>
+        <p class="text-muted mb-0">
+          {{ t("dispatches.subtitle") }}
+        </p>
       </div>
 
       <button class="btn btn-success" @click="openModal">
-        + Create Dispatch
+        + {{ t("dispatches.createDispatch") }}
       </button>
     </div>
 
@@ -230,7 +253,9 @@ onMounted(loadData);
       <div class="col-md-4">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Total Dispatches</p>
+            <p class="text-muted small mb-1">
+              {{ t("dispatches.totalDispatches") }}
+            </p>
             <h4 class="fw-bold mb-0">{{ dispatches.length }}</h4>
           </div>
         </div>
@@ -239,7 +264,9 @@ onMounted(loadData);
       <div class="col-md-4">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Prepared</p>
+            <p class="text-muted small mb-1">
+              {{ t("dispatches.prepared") }}
+            </p>
             <h4 class="fw-bold mb-0">
               {{ dispatches.filter((d) => d.status === "PREPARED").length }}
             </h4>
@@ -250,7 +277,9 @@ onMounted(loadData);
       <div class="col-md-4">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Dispatched</p>
+            <p class="text-muted small mb-1">
+              {{ t("dispatches.dispatched") }}
+            </p>
             <h4 class="fw-bold mb-0">
               {{ dispatches.filter((d) => d.status === "DISPATCHED").length }}
             </h4>
@@ -268,15 +297,19 @@ onMounted(loadData);
               v-model="searchQuery"
               type="text"
               class="form-control"
-              placeholder="Search dispatch number or customer..."
+              :placeholder="t('dispatches.searchPlaceholder')"
             />
           </div>
 
           <div class="col-md-4">
             <select v-model="statusFilter" class="form-select">
-              <option value="ALL">All Statuses</option>
-              <option value="PREPARED">Prepared</option>
-              <option value="DISPATCHED">Dispatched</option>
+              <option value="ALL">{{ t("dispatches.allStatuses") }}</option>
+              <option value="PREPARED">
+                {{ t("dispatches.statuses.prepared") }}
+              </option>
+              <option value="DISPATCHED">
+                {{ t("dispatches.statuses.dispatched") }}
+              </option>
             </select>
           </div>
         </div>
@@ -288,29 +321,31 @@ onMounted(loadData);
       <div class="card-body">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-success"></div>
-          <p class="text-muted mt-2">Loading dispatches...</p>
+          <p class="text-muted mt-2">
+            {{ t("dispatches.loading") }}
+          </p>
         </div>
 
         <div
           v-else-if="filteredDispatches.length === 0"
           class="text-center text-muted py-5"
         >
-          No dispatches found.
+          {{ t("dispatches.noDispatches") }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>Dispatch Number</th>
-                <th>Date</th>
-                <th>Invoice</th>
-                <th>Customer</th>
-                <th>Transporter</th>
-                <th>Vehicle</th>
-                <th>Tracking Number</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{{ t("dispatches.dispatchNumber") }}</th>
+                <th>{{ t("dispatches.date") }}</th>
+                <th>{{ t("dispatches.invoice") }}</th>
+                <th>{{ t("dispatches.customer") }}</th>
+                <th>{{ t("dispatches.transporter") }}</th>
+                <th>{{ t("dispatches.vehicle") }}</th>
+                <th>{{ t("dispatches.trackingNumber") }}</th>
+                <th>{{ t("dispatches.status") }}</th>
+                <th>{{ t("dispatches.actions") }}</th>
               </tr>
             </thead>
 
@@ -322,13 +357,9 @@ onMounted(loadData);
 
                 <td>{{ formatDate(dispatch.dispatch_date) }}</td>
 
-                <td>
-                  {{ getInvoiceNumber(dispatch.invoice_id) }}
-                </td>
+                <td>{{ getInvoiceNumber(dispatch.invoice_id) }}</td>
 
-                <td>
-                  {{ getCustomerName(dispatch.invoice_id) }}
-                </td>
+                <td>{{ getCustomerName(dispatch.invoice_id) }}</td>
 
                 <td>{{ dispatch.transporter_name || "-" }}</td>
 
@@ -338,7 +369,7 @@ onMounted(loadData);
 
                 <td>
                   <span class="badge" :class="statusClass(dispatch.status)">
-                    {{ dispatch.status }}
+                    {{ formatStatus(dispatch.status) }}
                   </span>
                 </td>
 
@@ -348,10 +379,12 @@ onMounted(loadData);
                     class="btn btn-sm btn-success"
                     @click="markDispatched(dispatch)"
                   >
-                    Mark Dispatched
+                    {{ t("dispatches.markDispatched") }}
                   </button>
 
-                  <span v-else class="text-muted small"> Completed </span>
+                  <span v-else class="text-muted small">
+                    {{ t("dispatches.completed") }}
+                  </span>
                 </td>
               </tr>
             </tbody>
@@ -365,9 +398,11 @@ onMounted(loadData);
       <div class="dispatch-modal">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h5 class="fw-bold mb-1">Create Dispatch</h5>
+            <h5 class="fw-bold mb-1">
+              {{ t("dispatches.createDispatch") }}
+            </h5>
             <p class="text-muted small mb-0">
-              Prepare delivery against an issued invoice.
+              {{ t("dispatches.modalSubtitle") }}
             </p>
           </div>
 
@@ -380,10 +415,14 @@ onMounted(loadData);
 
         <form @submit.prevent="createDispatch">
           <div class="mb-3">
-            <label class="form-label fw-semibold"> Issued Invoice </label>
+            <label class="form-label fw-semibold">
+              {{ t("dispatches.issuedInvoice") }}
+            </label>
 
             <select v-model="form.invoice_id" class="form-select" required>
-              <option value="" disabled>Select issued invoice</option>
+              <option value="" disabled>
+                {{ t("dispatches.selectIssuedInvoice") }}
+              </option>
 
               <option
                 v-for="invoice in availableInvoices"
@@ -400,60 +439,66 @@ onMounted(loadData);
               v-if="availableInvoices.length === 0"
               class="text-muted small mt-2"
             >
-              No uninvoiced dispatches are available. Only issued invoices
-              without an existing dispatch can be selected.
+              {{ t("dispatches.noAvailableInvoices") }}
             </p>
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold"> Transporter Name </label>
+            <label class="form-label fw-semibold">
+              {{ t("dispatches.transporterName") }}
+            </label>
 
             <input
               v-model="form.transporter_name"
               type="text"
               class="form-control"
-              placeholder="e.g. ABC Transport"
+              :placeholder="t('dispatches.transporterPlaceholder')"
             />
           </div>
 
           <div class="row g-3 mb-3">
             <div class="col-md-6">
-              <label class="form-label fw-semibold"> Vehicle Number </label>
+              <label class="form-label fw-semibold">
+                {{ t("dispatches.vehicleNumber") }}
+              </label>
 
               <input
                 v-model="form.vehicle_number"
                 type="text"
                 class="form-control"
-                placeholder="e.g. TN01AB1234"
+                :placeholder="t('dispatches.vehiclePlaceholder')"
               />
             </div>
 
             <div class="col-md-6">
-              <label class="form-label fw-semibold"> Tracking Number </label>
+              <label class="form-label fw-semibold">
+                {{ t("dispatches.trackingNumber") }}
+              </label>
 
               <input
                 v-model="form.tracking_number"
                 type="text"
                 class="form-control"
-                placeholder="Optional tracking ID"
+                :placeholder="t('dispatches.trackingPlaceholder')"
               />
             </div>
           </div>
 
           <div class="mb-4">
-            <label class="form-label fw-semibold"> Notes </label>
+            <label class="form-label fw-semibold">
+              {{ t("dispatches.notes") }}
+            </label>
 
             <textarea
               v-model="form.notes"
               class="form-control"
               rows="3"
-              placeholder="Optional dispatch notes"
+              :placeholder="t('dispatches.notesPlaceholder')"
             ></textarea>
           </div>
 
           <div class="alert alert-info small">
-            Creating this record prepares the dispatch. Finished goods inventory
-            will only be deducted when you mark the dispatch as completed.
+            {{ t("dispatches.inventoryNotice") }}
           </div>
 
           <div v-if="error" class="alert alert-danger">
@@ -466,7 +511,7 @@ onMounted(loadData);
               class="btn btn-light"
               @click="showModal = false"
             >
-              Cancel
+              {{ t("dispatches.cancel") }}
             </button>
 
             <button
@@ -474,7 +519,11 @@ onMounted(loadData);
               class="btn btn-success"
               :disabled="saving || availableInvoices.length === 0"
             >
-              {{ saving ? "Creating..." : "Prepare Dispatch" }}
+              {{
+                saving
+                  ? t("dispatches.creating")
+                  : t("dispatches.prepareDispatch")
+              }}
             </button>
           </div>
         </form>

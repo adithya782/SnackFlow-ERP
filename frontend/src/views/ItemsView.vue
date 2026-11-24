@@ -5,13 +5,12 @@
       class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4"
     >
       <div>
-        <h2 class="fw-bold mb-1">Items Management</h2>
-        <p class="text-muted mb-0">
-          Manage finished goods, raw materials and packaging.
-        </p>
+        <h2 class="fw-bold mb-1">{{ $t("items.title") }}</h2>
+        <p class="text-muted mb-0">{{ $t("items.subtitle") }}</p>
       </div>
-
-      <button class="btn btn-success" @click="openAddModal">+ Add Item</button>
+      <button class="btn btn-success" @click="openAddModal">
+        + {{ $t("items.addItem") }}
+      </button>
     </div>
 
     <!-- Error message -->
@@ -28,16 +27,21 @@
               v-model="search"
               type="text"
               class="form-control"
-              placeholder="Search by item name or SKU..."
+              :placeholder="$t('items.searchPlaceholder')"
             />
           </div>
-
           <div class="col-md-5">
             <select v-model="categoryFilter" class="form-select">
-              <option value="">All Categories</option>
-              <option value="FINISHED_GOOD">Finished Goods</option>
-              <option value="RAW_MATERIAL">Raw Materials</option>
-              <option value="PACKAGING">Packaging</option>
+              <option value="">{{ $t("items.allCategories") }}</option>
+              <option value="FINISHED_GOOD">
+                {{ $t("items.categories.finishedGood") }}
+              </option>
+              <option value="RAW_MATERIAL">
+                {{ $t("items.categories.rawMaterial") }}
+              </option>
+              <option value="PACKAGING">
+                {{ $t("items.categories.packaging") }}
+              </option>
             </select>
           </div>
         </div>
@@ -49,20 +53,20 @@
       <div class="card-body">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-success"></div>
-          <p class="text-muted mt-2">Loading items...</p>
+          <p class="text-muted mt-2">{{ $t("items.loading") }}</p>
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover align-middle">
             <thead class="table-light">
               <tr>
-                <th>Item Name</th>
+                <th>{{ $t("items.itemName") }}</th>
                 <th>SKU</th>
-                <th>Category</th>
-                <th>Unit</th>
-                <th>Reorder Level</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{{ $t("items.category") }}</th>
+                <th>{{ $t("items.unit") }}</th>
+                <th>{{ $t("items.reorderLevel") }}</th>
+                <th>{{ $t("items.status") }}</th>
+                <th>{{ $t("items.actions") }}</th>
               </tr>
             </thead>
 
@@ -73,24 +77,23 @@
                 <td>{{ formatCategory(item.category) }}</td>
                 <td>{{ item.unit }}</td>
                 <td>{{ item.reorder_level }}</td>
-
                 <td>
                   <span
                     class="badge"
                     :class="item.is_active ? 'bg-success' : 'bg-secondary'"
                   >
-                    {{ item.is_active ? "Active" : "Inactive" }}
+                    {{
+                      item.is_active ? $t("items.active") : $t("items.inactive")
+                    }}
                   </span>
                 </td>
-
                 <td>
                   <button
                     class="btn btn-sm btn-outline-primary me-2"
                     @click="openEditModal(item)"
                   >
-                    Edit
+                    {{ $t("items.edit") }}
                   </button>
-
                   <button
                     class="btn btn-sm"
                     :class="
@@ -100,14 +103,18 @@
                     "
                     @click="toggleStatus(item)"
                   >
-                    {{ item.is_active ? "Deactivate" : "Activate" }}
+                    {{
+                      item.is_active
+                        ? $t("items.deactivate")
+                        : $t("items.activate")
+                    }}
                   </button>
                 </td>
               </tr>
 
               <tr v-if="filteredItems.length === 0">
                 <td colspan="7" class="text-center text-muted py-4">
-                  No items found.
+                  {{ $t("items.noItems") }}
                 </td>
               </tr>
             </tbody>
@@ -115,7 +122,11 @@
         </div>
 
         <div class="text-muted small mt-2">
-          Showing {{ filteredItems.length }} of {{ items.length }} items
+          {{ $t("items.showing") }}
+          {{ filteredItems.length }}
+          {{ $t("items.of") }}
+          {{ items.length }}
+          {{ $t("items.items") }}
         </div>
       </div>
     </div>
@@ -126,9 +137,8 @@
         <div class="modal-content border-0 shadow">
           <div class="modal-header">
             <h5 class="modal-title fw-bold">
-              {{ editingItem ? "Edit Item" : "Add New Item" }}
+              {{ editingItem ? $t("items.editItem") : $t("items.addNewItem") }}
             </h5>
-
             <button
               type="button"
               class="btn-close"
@@ -139,9 +149,9 @@
           <form @submit.prevent="saveItem">
             <div class="modal-body">
               <div class="mb-3">
-                <label class="form-label text-dark fw-semibold"
-                  >Item Name</label
-                >
+                <label class="form-label text-dark fw-semibold">
+                  {{ $t("items.itemName") }}
+                </label>
                 <input v-model="form.name" class="form-control" required />
               </div>
 
@@ -151,29 +161,41 @@
               </div>
 
               <div class="mb-3">
-                <label class="form-label text-dark fw-semibold">Category</label>
+                <label class="form-label text-dark fw-semibold">
+                  {{ $t("items.category") }}
+                </label>
                 <select v-model="form.category" class="form-select" required>
-                  <option value="" disabled>Select category</option>
-                  <option value="FINISHED_GOOD">Finished Goods</option>
-                  <option value="RAW_MATERIAL">Raw Materials</option>
-                  <option value="PACKAGING">Packaging</option>
+                  <option value="" disabled>
+                    {{ $t("items.selectCategory") }}
+                  </option>
+                  <option value="FINISHED_GOOD">
+                    {{ $t("items.categories.finishedGood") }}
+                  </option>
+                  <option value="RAW_MATERIAL">
+                    {{ $t("items.categories.rawMaterial") }}
+                  </option>
+                  <option value="PACKAGING">
+                    {{ $t("items.categories.packaging") }}
+                  </option>
                 </select>
               </div>
 
               <div class="mb-3">
-                <label class="form-label text-dark fw-semibold">Unit</label>
+                <label class="form-label text-dark fw-semibold">
+                  {{ $t("items.unit") }}
+                </label>
                 <input
                   v-model="form.unit"
                   class="form-control"
-                  placeholder="Example: PACKET, KG, LITRE"
+                  :placeholder="$t('items.unitPlaceholder')"
                   required
                 />
               </div>
 
               <div class="mb-3">
-                <label class="form-label text-dark fw-semibold"
-                  >Reorder Level</label
-                >
+                <label class="form-label text-dark fw-semibold">
+                  {{ $t("items.reorderLevel") }}
+                </label>
                 <input
                   v-model="form.reorder_level"
                   type="number"
@@ -185,9 +207,9 @@
               </div>
 
               <div class="mb-3">
-                <label class="form-label text-dark fw-semibold"
-                  >Description</label
-                >
+                <label class="form-label text-dark fw-semibold">
+                  {{ $t("items.description") }}
+                </label>
                 <textarea
                   v-model="form.description"
                   class="form-control"
@@ -206,11 +228,10 @@
                 class="btn btn-outline-secondary"
                 @click="closeModal"
               >
-                Cancel
+                {{ $t("items.cancel") }}
               </button>
-
               <button type="submit" class="btn btn-success" :disabled="saving">
-                {{ saving ? "Saving..." : "Save Item" }}
+                {{ saving ? $t("items.saving") : $t("items.saveItem") }}
               </button>
             </div>
           </form>
@@ -222,18 +243,18 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const items = ref([]);
 const loading = ref(false);
 const saving = ref(false);
-
 const search = ref("");
 const categoryFilter = ref("");
-
 const showModal = ref(false);
 const editingItem = ref(null);
-
 const errorMessage = ref("");
 const formError = ref("");
 
@@ -264,13 +285,13 @@ const filteredItems = computed(() => {
 });
 
 function formatCategory(category) {
-  return (
-    {
-      FINISHED_GOOD: "Finished Goods",
-      RAW_MATERIAL: "Raw Materials",
-      PACKAGING: "Packaging",
-    }[category] || category
-  );
+  const translations = {
+    FINISHED_GOOD: "items.categories.finishedGood",
+    RAW_MATERIAL: "items.categories.rawMaterial",
+    PACKAGING: "items.categories.packaging",
+  };
+
+  return translations[category] ? t(translations[category]) : category;
 }
 
 async function loadItems() {
@@ -279,14 +300,12 @@ async function loadItems() {
 
   try {
     const response = await api.get("/items");
-
     items.value = Array.isArray(response.data)
       ? response.data
       : response.data.items || [];
   } catch (error) {
     console.error(error);
-    errorMessage.value =
-      error.response?.data?.message || "Unable to load items.";
+    errorMessage.value = error.response?.data?.message || t("items.loadError");
   } finally {
     loading.value = false;
   }
@@ -301,7 +320,6 @@ function openAddModal() {
 
 function openEditModal(item) {
   editingItem.value = item;
-
   form.value = {
     name: item.name,
     sku: item.sku,
@@ -310,7 +328,6 @@ function openEditModal(item) {
     reorder_level: item.reorder_level,
     description: item.description || "",
   };
-
   formError.value = "";
   showModal.value = true;
 }
@@ -340,16 +357,18 @@ async function saveItem() {
     await loadItems();
   } catch (error) {
     console.error(error);
-    formError.value = error.response?.data?.message || "Unable to save item.";
+    formError.value = error.response?.data?.message || t("items.saveError");
   } finally {
     saving.value = false;
   }
 }
 
 async function toggleStatus(item) {
-  const action = item.is_active ? "deactivate" : "activate";
+  const action = item.is_active
+    ? t("items.deactivate").toLowerCase()
+    : t("items.activate").toLowerCase();
 
-  if (!confirm(`Are you sure you want to ${action} ${item.name}?`)) {
+  if (!confirm(t("items.confirmStatus", { action, name: item.name }))) {
     return;
   }
 
@@ -364,7 +383,7 @@ async function toggleStatus(item) {
   } catch (error) {
     console.error(error);
     errorMessage.value =
-      error.response?.data?.message || "Unable to update item status.";
+      error.response?.data?.message || t("items.statusError");
   }
 }
 

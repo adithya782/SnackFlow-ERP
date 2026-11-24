@@ -1,6 +1,9 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const invoices = ref([]);
 const salesOrders = ref([]);
@@ -11,6 +14,7 @@ const loading = ref(true);
 const generating = ref(false);
 const error = ref("");
 const success = ref("");
+
 const searchQuery = ref("");
 const statusFilter = ref("ALL");
 const selectedOrderId = ref("");
@@ -75,6 +79,15 @@ function statusClass(status) {
   return status === "ISSUED" ? "bg-success" : "bg-warning text-dark";
 }
 
+function formatStatus(status) {
+  const translations = {
+    DRAFT: "invoices.statuses.draft",
+    ISSUED: "invoices.statuses.issued",
+  };
+
+  return translations[status] ? t(translations[status]) : status;
+}
+
 function getCustomerName(customerId) {
   return customerMap.value[customerId] || `Customer #${customerId}`;
 }
@@ -101,8 +114,7 @@ async function loadData() {
     customers.value = customerResponse.data.customers;
     items.value = itemResponse.data.items;
   } catch (err) {
-    error.value =
-      err.response?.data?.message || "Failed to load invoice information.";
+    error.value = err.response?.data?.message || t("invoices.loadError");
   } finally {
     loading.value = false;
   }
@@ -110,7 +122,7 @@ async function loadData() {
 
 async function generateInvoice() {
   if (!selectedOrderId.value) {
-    error.value = "Please select an approved sales order.";
+    error.value = t("invoices.selectOrderError");
     return;
   }
 
@@ -123,13 +135,14 @@ async function generateInvoice() {
       `/invoices/from-sales-order/${selectedOrderId.value}`,
     );
 
-    success.value = `Draft invoice ${response.data.invoice.invoice_number} created successfully.`;
+    success.value = t("invoices.generateSuccess", {
+      number: response.data.invoice.invoice_number,
+    });
 
     selectedOrderId.value = "";
-
     await loadData();
   } catch (err) {
-    error.value = err.response?.data?.message || "Failed to generate invoice.";
+    error.value = err.response?.data?.message || t("invoices.generateError");
   } finally {
     generating.value = false;
   }
@@ -138,7 +151,15 @@ async function generateInvoice() {
 async function issueInvoice(invoice) {
   if (invoice.status !== "DRAFT") return;
 
-  if (!confirm(`Issue invoice ${invoice.invoice_number}?`)) return;
+  if (
+    !confirm(
+      t("invoices.confirmIssue", {
+        number: invoice.invoice_number,
+      }),
+    )
+  ) {
+    return;
+  }
 
   error.value = "";
   success.value = "";
@@ -146,11 +167,13 @@ async function issueInvoice(invoice) {
   try {
     await api.post(`/invoices/${invoice.id}/issue`);
 
-    success.value = `Invoice ${invoice.invoice_number} issued successfully.`;
+    success.value = t("invoices.issueSuccess", {
+      number: invoice.invoice_number,
+    });
 
     await loadData();
   } catch (err) {
-    error.value = err.response?.data?.message || "Failed to issue invoice.";
+    error.value = err.response?.data?.message || t("invoices.issueError");
   }
 }
 
@@ -178,9 +201,11 @@ async function downloadInvoice(invoice) {
 
     window.URL.revokeObjectURL(url);
 
-    success.value = `Invoice ${invoice.invoice_number} downloaded.`;
+    success.value = t("invoices.downloadSuccess", {
+      number: invoice.invoice_number,
+    });
   } catch (err) {
-    error.value = "Failed to download invoice PDF.";
+    error.value = t("invoices.downloadError");
   }
 }
 
@@ -191,9 +216,9 @@ onMounted(loadData);
   <div class="container-fluid py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h3 class="fw-bold mb-1">Invoices</h3>
+        <h3 class="fw-bold mb-1">{{ t("invoices.title") }}</h3>
         <p class="text-muted mb-0">
-          Generate, issue and download customer invoices.
+          {{ t("invoices.subtitle") }}
         </p>
       </div>
 
@@ -202,7 +227,7 @@ onMounted(loadData);
         data-bs-toggle="modal"
         data-bs-target="#generateInvoiceModal"
       >
-        + Generate Invoice
+        + {{ t("invoices.generateInvoice") }}
       </button>
     </div>
 
@@ -220,7 +245,9 @@ onMounted(loadData);
       <div class="col-md-4">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Total Invoices</p>
+            <p class="text-muted small mb-1">
+              {{ t("invoices.totalInvoices") }}
+            </p>
             <h4 class="fw-bold mb-0">{{ invoices.length }}</h4>
           </div>
         </div>
@@ -229,7 +256,9 @@ onMounted(loadData);
       <div class="col-md-4">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Draft Invoices</p>
+            <p class="text-muted small mb-1">
+              {{ t("invoices.draftInvoices") }}
+            </p>
             <h4 class="fw-bold mb-0">
               {{ invoices.filter((i) => i.status === "DRAFT").length }}
             </h4>
@@ -240,7 +269,9 @@ onMounted(loadData);
       <div class="col-md-4">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Issued Invoices</p>
+            <p class="text-muted small mb-1">
+              {{ t("invoices.issuedInvoices") }}
+            </p>
             <h4 class="fw-bold mb-0">
               {{ invoices.filter((i) => i.status === "ISSUED").length }}
             </h4>
@@ -258,15 +289,17 @@ onMounted(loadData);
               v-model="searchQuery"
               type="text"
               class="form-control"
-              placeholder="Search invoice number or customer..."
+              :placeholder="t('invoices.searchPlaceholder')"
             />
           </div>
 
           <div class="col-md-4">
             <select v-model="statusFilter" class="form-select">
-              <option value="ALL">All Statuses</option>
-              <option value="DRAFT">Draft</option>
-              <option value="ISSUED">Issued</option>
+              <option value="ALL">{{ t("invoices.allStatuses") }}</option>
+              <option value="DRAFT">{{ t("invoices.statuses.draft") }}</option>
+              <option value="ISSUED">
+                {{ t("invoices.statuses.issued") }}
+              </option>
             </select>
           </div>
         </div>
@@ -278,29 +311,31 @@ onMounted(loadData);
       <div class="card-body">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-success"></div>
-          <p class="text-muted mt-2">Loading invoices...</p>
+          <p class="text-muted mt-2">
+            {{ t("invoices.loading") }}
+          </p>
         </div>
 
         <div
           v-else-if="filteredInvoices.length === 0"
           class="text-center text-muted py-5"
         >
-          No invoices found.
+          {{ t("invoices.noInvoices") }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>Invoice Number</th>
-                <th>Date</th>
-                <th>Customer</th>
-                <th>Sales Order</th>
-                <th>Taxable Amount</th>
-                <th>GST</th>
-                <th>Total Amount</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{{ t("invoices.invoiceNumber") }}</th>
+                <th>{{ t("invoices.date") }}</th>
+                <th>{{ t("invoices.customer") }}</th>
+                <th>{{ t("invoices.salesOrder") }}</th>
+                <th>{{ t("invoices.taxableAmount") }}</th>
+                <th>{{ t("invoices.gst") }}</th>
+                <th>{{ t("invoices.totalAmount") }}</th>
+                <th>{{ t("invoices.status") }}</th>
+                <th>{{ t("invoices.actions") }}</th>
               </tr>
             </thead>
 
@@ -321,8 +356,12 @@ onMounted(loadData);
                 <td>
                   {{ formatCurrency(invoice.total_tax) }}
                   <div class="text-muted small">
-                    <span v-if="Number(invoice.igst_amount) > 0"> IGST </span>
-                    <span v-else> CGST + SGST </span>
+                    <span v-if="Number(invoice.igst_amount) > 0">
+                      {{ t("invoices.igst") }}
+                    </span>
+                    <span v-else>
+                      {{ t("invoices.cgstSgst") }}
+                    </span>
                   </div>
                 </td>
 
@@ -332,7 +371,7 @@ onMounted(loadData);
 
                 <td>
                   <span class="badge" :class="statusClass(invoice.status)">
-                    {{ invoice.status }}
+                    {{ formatStatus(invoice.status) }}
                   </span>
                 </td>
 
@@ -343,14 +382,14 @@ onMounted(loadData);
                       class="btn btn-sm btn-success"
                       @click="issueInvoice(invoice)"
                     >
-                      Issue
+                      {{ t("invoices.issue") }}
                     </button>
 
                     <button
                       class="btn btn-sm btn-outline-primary"
                       @click="downloadInvoice(invoice)"
                     >
-                      PDF
+                      {{ t("invoices.pdf") }}
                     </button>
                   </div>
                 </td>
@@ -372,9 +411,12 @@ onMounted(loadData);
         <div class="modal-content">
           <div class="modal-header">
             <div>
-              <h5 class="modal-title fw-bold">Generate Invoice</h5>
+              <h5 class="modal-title fw-bold">
+                {{ t("invoices.generateInvoice") }}
+              </h5>
+
               <p class="text-muted small mb-0">
-                Select an approved sales order.
+                {{ t("invoices.modalSubtitle") }}
               </p>
             </div>
 
@@ -386,10 +428,14 @@ onMounted(loadData);
           </div>
 
           <div class="modal-body">
-            <label class="form-label fw-semibold"> Approved Sales Order </label>
+            <label class="form-label fw-semibold">
+              {{ t("invoices.approvedSalesOrder") }}
+            </label>
 
             <select v-model="selectedOrderId" class="form-select">
-              <option value="">Select sales order</option>
+              <option value="">
+                {{ t("invoices.selectSalesOrder") }}
+              </option>
 
               <option
                 v-for="order in approvedOrders"
@@ -406,18 +452,17 @@ onMounted(loadData);
               v-if="approvedOrders.length === 0"
               class="alert alert-info mt-3 mb-0"
             >
-              No uninvoiced approved sales orders are available.
+              {{ t("invoices.noApprovedOrders") }}
             </div>
 
             <p class="text-muted small mt-3 mb-0">
-              Generating an invoice creates a DRAFT invoice. You can review and
-              issue it afterwards.
+              {{ t("invoices.draftExplanation") }}
             </p>
           </div>
 
           <div class="modal-footer">
             <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-              Cancel
+              {{ t("invoices.cancel") }}
             </button>
 
             <button
@@ -426,7 +471,11 @@ onMounted(loadData);
               :disabled="generating || !selectedOrderId"
               @click="generateInvoice"
             >
-              {{ generating ? "Generating..." : "Generate Invoice" }}
+              {{
+                generating
+                  ? t("invoices.generating")
+                  : t("invoices.generateInvoice")
+              }}
             </button>
           </div>
         </div>
@@ -434,9 +483,8 @@ onMounted(loadData);
     </div>
 
     <div class="alert alert-warning mt-3 mb-0">
-      <strong>Demo notice:</strong>
-      Generated PDFs are demonstration invoices and are not valid GST tax
-      invoices.
+      <strong>{{ t("invoices.demoNotice") }}</strong>
+      {{ t("invoices.demoDisclaimer") }}
     </div>
   </div>
 </template>

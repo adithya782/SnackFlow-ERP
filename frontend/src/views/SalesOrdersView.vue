@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const salesOrders = ref([]);
 const customers = ref([]);
 const items = ref([]);
-
 const loading = ref(true);
 const saving = ref(false);
 const showModal = ref(false);
@@ -87,7 +89,6 @@ const orderTotals = computed(() => {
       totals.discount += Number(item.discount_amount) || 0;
       totals.tax += item.tax;
       totals.total += item.total;
-
       return totals;
     },
     {
@@ -126,6 +127,17 @@ function statusClass(status) {
   };
 
   return classes[status] || "bg-secondary";
+}
+
+function formatStatus(status) {
+  const translations = {
+    DRAFT: "salesOrders.statuses.draft",
+    SUBMITTED: "salesOrders.statuses.submitted",
+    APPROVED: "salesOrders.statuses.approved",
+    REJECTED: "salesOrders.statuses.rejected",
+  };
+
+  return translations[status] ? t(translations[status]) : status;
 }
 
 function getItemName(itemId) {
@@ -167,7 +179,6 @@ function addOrderItem() {
 
 function removeOrderItem(index) {
   if (form.value.items.length === 1) return;
-
   form.value.items.splice(index, 1);
 }
 
@@ -183,6 +194,7 @@ async function fetchCustomers() {
 
 async function fetchItems() {
   const response = await api.get("/items");
+
   items.value = response.data.items.filter(
     (item) => item.is_active && item.category === "FINISHED_GOOD",
   );
@@ -195,8 +207,7 @@ async function loadData() {
   try {
     await Promise.all([fetchOrders(), fetchCustomers(), fetchItems()]);
   } catch (err) {
-    error.value =
-      err.response?.data?.message || "Failed to load sales order information.";
+    error.value = err.response?.data?.message || t("salesOrders.loadError");
   } finally {
     loading.value = false;
   }
@@ -204,41 +215,53 @@ async function loadData() {
 
 function validateForm() {
   if (!form.value.customer_id) {
-    return "Please select a customer.";
+    return t("salesOrders.selectCustomerError");
   }
 
   if (!form.value.items.length) {
-    return "Add at least one product.";
+    return t("salesOrders.addProductError");
   }
 
   for (let i = 0; i < form.value.items.length; i++) {
     const item = form.value.items[i];
 
     if (!item.item_id) {
-      return `Please select a product in row ${i + 1}.`;
+      return t("salesOrders.selectProductRowError", {
+        row: i + 1,
+      });
     }
 
     if (Number(item.quantity) <= 0) {
-      return `Quantity must be positive in row ${i + 1}.`;
+      return t("salesOrders.quantityError", {
+        row: i + 1,
+      });
     }
 
     if (Number(item.unit_price) < 0) {
-      return `Unit price cannot be negative in row ${i + 1}.`;
+      return t("salesOrders.priceError", {
+        row: i + 1,
+      });
     }
 
     if (Number(item.discount_amount) < 0) {
-      return `Discount cannot be negative in row ${i + 1}.`;
+      return t("salesOrders.discountError", {
+        row: i + 1,
+      });
     }
 
     if (
       Number(item.discount_amount) >
       Number(item.quantity) * Number(item.unit_price)
     ) {
-      return `Discount exceeds the gross amount in row ${i + 1}.`;
+      return t("salesOrders.discountExceedsError", {
+        row: i + 1,
+      });
     }
 
     if (Number(item.tax_rate) < 0 || Number(item.tax_rate) > 100) {
-      return `Invalid GST rate in row ${i + 1}.`;
+      return t("salesOrders.gstError", {
+        row: i + 1,
+      });
     }
   }
 
@@ -273,19 +296,27 @@ async function createOrder() {
     const response = await api.post("/sales-orders", payload);
 
     showModal.value = false;
-    success.value = `Sales order ${response.data.sales_order.order_number} created successfully.`;
+
+    success.value = t("salesOrders.createSuccess", {
+      number: response.data.sales_order.order_number,
+    });
 
     await fetchOrders();
   } catch (err) {
-    error.value =
-      err.response?.data?.message || "Failed to create sales order.";
+    error.value = err.response?.data?.message || t("salesOrders.createError");
   } finally {
     saving.value = false;
   }
 }
 
 async function submitOrder(order) {
-  if (!confirm(`Submit ${order.order_number} for approval?`)) {
+  if (
+    !confirm(
+      t("salesOrders.confirmSubmit", {
+        number: order.order_number,
+      }),
+    )
+  ) {
     return;
   }
 
@@ -295,18 +326,27 @@ async function submitOrder(order) {
   try {
     await api.post(`/sales-orders/${order.id}/submit`);
 
-    success.value = "Sales order submitted for approval.";
+    success.value = t("salesOrders.submitSuccess");
+
     await fetchOrders();
   } catch (err) {
-    error.value =
-      err.response?.data?.message || "Failed to submit sales order.";
+    error.value = err.response?.data?.message || t("salesOrders.submitError");
   }
 }
 
 async function reviewOrder(order, decision) {
   const action = decision === "APPROVED" ? "approve" : "reject";
 
-  if (!confirm(`${action} ${order.order_number}?`)) {
+  if (
+    !confirm(
+      t(
+        decision === "APPROVED"
+          ? "salesOrders.confirmApprove"
+          : "salesOrders.confirmReject",
+        { number: order.order_number },
+      ),
+    )
+  ) {
     return;
   }
 
@@ -316,12 +356,21 @@ async function reviewOrder(order, decision) {
   try {
     await api.post(`/sales-orders/${order.id}/${action}`);
 
-    success.value = `Sales order ${decision.toLowerCase()} successfully.`;
+    success.value = t(
+      decision === "APPROVED"
+        ? "salesOrders.approveSuccess"
+        : "salesOrders.rejectSuccess",
+    );
 
     await fetchOrders();
   } catch (err) {
     error.value =
-      err.response?.data?.message || `Failed to ${action} sales order.`;
+      err.response?.data?.message ||
+      t(
+        decision === "APPROVED"
+          ? "salesOrders.approveError"
+          : "salesOrders.rejectError",
+      );
   }
 }
 
@@ -333,12 +382,16 @@ onMounted(loadData);
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h3 class="fw-bold mb-1">Sales Orders</h3>
-        <p class="text-muted mb-0">Create and manage customer orders.</p>
+        <h3 class="fw-bold mb-1">
+          {{ t("salesOrders.title") }}
+        </h3>
+        <p class="text-muted mb-0">
+          {{ t("salesOrders.subtitle") }}
+        </p>
       </div>
 
       <button class="btn btn-success" @click="openModal">
-        + New Sales Order
+        + {{ t("salesOrders.newOrder") }}
       </button>
     </div>
 
@@ -357,8 +410,12 @@ onMounted(loadData);
       <div class="col-md-3">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Total Orders</p>
-            <h4 class="fw-bold mb-0">{{ salesOrders.length }}</h4>
+            <p class="text-muted small mb-1">
+              {{ t("salesOrders.totalOrders") }}
+            </p>
+            <h4 class="fw-bold mb-0">
+              {{ salesOrders.length }}
+            </h4>
           </div>
         </div>
       </div>
@@ -366,7 +423,9 @@ onMounted(loadData);
       <div class="col-md-3">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Draft</p>
+            <p class="text-muted small mb-1">
+              {{ t("salesOrders.draft") }}
+            </p>
             <h4 class="fw-bold mb-0">
               {{ salesOrders.filter((o) => o.status === "DRAFT").length }}
             </h4>
@@ -377,7 +436,9 @@ onMounted(loadData);
       <div class="col-md-3">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Pending Approval</p>
+            <p class="text-muted small mb-1">
+              {{ t("salesOrders.pendingApproval") }}
+            </p>
             <h4 class="fw-bold mb-0">
               {{ salesOrders.filter((o) => o.status === "SUBMITTED").length }}
             </h4>
@@ -388,7 +449,9 @@ onMounted(loadData);
       <div class="col-md-3">
         <div class="card border-0 shadow-sm">
           <div class="card-body">
-            <p class="text-muted small mb-1">Approved</p>
+            <p class="text-muted small mb-1">
+              {{ t("salesOrders.approved") }}
+            </p>
             <h4 class="fw-bold mb-0">
               {{ salesOrders.filter((o) => o.status === "APPROVED").length }}
             </h4>
@@ -406,17 +469,27 @@ onMounted(loadData);
               v-model="searchQuery"
               type="text"
               class="form-control"
-              placeholder="Search order number or customer..."
+              :placeholder="t('salesOrders.searchPlaceholder')"
             />
           </div>
 
           <div class="col-md-4">
             <select v-model="statusFilter" class="form-select">
-              <option value="ALL">All Statuses</option>
-              <option value="DRAFT">Draft</option>
-              <option value="SUBMITTED">Submitted</option>
-              <option value="APPROVED">Approved</option>
-              <option value="REJECTED">Rejected</option>
+              <option value="ALL">
+                {{ t("salesOrders.allStatuses") }}
+              </option>
+              <option value="DRAFT">
+                {{ t("salesOrders.statuses.draft") }}
+              </option>
+              <option value="SUBMITTED">
+                {{ t("salesOrders.statuses.submitted") }}
+              </option>
+              <option value="APPROVED">
+                {{ t("salesOrders.statuses.approved") }}
+              </option>
+              <option value="REJECTED">
+                {{ t("salesOrders.statuses.rejected") }}
+              </option>
             </select>
           </div>
         </div>
@@ -428,27 +501,29 @@ onMounted(loadData);
       <div class="card-body">
         <div v-if="loading" class="text-center py-5">
           <div class="spinner-border text-success"></div>
-          <p class="text-muted mt-2">Loading sales orders...</p>
+          <p class="text-muted mt-2">
+            {{ t("salesOrders.loading") }}
+          </p>
         </div>
 
         <div
           v-else-if="filteredOrders.length === 0"
           class="text-center text-muted py-5"
         >
-          No sales orders found.
+          {{ t("salesOrders.noOrders") }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover align-middle mb-0">
             <thead class="table-light">
               <tr>
-                <th>Order Number</th>
-                <th>Date</th>
-                <th>Customer</th>
-                <th>Items</th>
-                <th>Total Amount</th>
-                <th>Status</th>
-                <th>Actions</th>
+                <th>{{ t("salesOrders.orderNumber") }}</th>
+                <th>{{ t("salesOrders.date") }}</th>
+                <th>{{ t("salesOrders.customer") }}</th>
+                <th>{{ t("salesOrders.items") }}</th>
+                <th>{{ t("salesOrders.totalAmount") }}</th>
+                <th>{{ t("salesOrders.status") }}</th>
+                <th>{{ t("salesOrders.actions") }}</th>
               </tr>
             </thead>
 
@@ -467,9 +542,7 @@ onMounted(loadData);
                   }}
                 </td>
 
-                <td>
-                  {{ order.items.length }}
-                </td>
+                <td>{{ order.items.length }}</td>
 
                 <td class="fw-semibold">
                   {{ formatCurrency(order.total_amount) }}
@@ -477,7 +550,7 @@ onMounted(loadData);
 
                 <td>
                   <span class="badge" :class="statusClass(order.status)">
-                    {{ order.status }}
+                    {{ formatStatus(order.status) }}
                   </span>
                 </td>
 
@@ -488,7 +561,7 @@ onMounted(loadData);
                       class="btn btn-sm btn-outline-primary"
                       @click="submitOrder(order)"
                     >
-                      Submit
+                      {{ t("salesOrders.submit") }}
                     </button>
 
                     <template v-if="order.status === 'SUBMITTED'">
@@ -496,14 +569,14 @@ onMounted(loadData);
                         class="btn btn-sm btn-success"
                         @click="reviewOrder(order, 'APPROVED')"
                       >
-                        Approve
+                        {{ t("salesOrders.approve") }}
                       </button>
 
                       <button
                         class="btn btn-sm btn-outline-danger"
                         @click="reviewOrder(order, 'REJECTED')"
                       >
-                        Reject
+                        {{ t("salesOrders.reject") }}
                       </button>
                     </template>
 
@@ -511,7 +584,7 @@ onMounted(loadData);
                       v-if="['APPROVED', 'REJECTED'].includes(order.status)"
                       class="text-muted small"
                     >
-                      Reviewed
+                      {{ t("salesOrders.reviewed") }}
                     </span>
                   </div>
                 </td>
@@ -527,9 +600,11 @@ onMounted(loadData);
       <div class="sales-modal">
         <div class="d-flex justify-content-between align-items-center mb-4">
           <div>
-            <h5 class="fw-bold mb-1">Create Sales Order</h5>
+            <h5 class="fw-bold mb-1">
+              {{ t("salesOrders.createOrder") }}
+            </h5>
             <p class="text-muted small mb-0">
-              Add customer and finished products.
+              {{ t("salesOrders.createSubtitle") }}
             </p>
           </div>
 
@@ -543,10 +618,14 @@ onMounted(loadData);
         <form @submit.prevent="createOrder">
           <!-- Customer -->
           <div class="mb-4">
-            <label class="form-label fw-semibold">Customer</label>
+            <label class="form-label fw-semibold">
+              {{ t("salesOrders.customer") }}
+            </label>
 
             <select v-model="form.customer_id" class="form-select" required>
-              <option value="" disabled>Select customer</option>
+              <option value="" disabled>
+                {{ t("salesOrders.selectCustomer") }}
+              </option>
 
               <option
                 v-for="customer in customers.filter((c) => c.is_active)"
@@ -560,14 +639,16 @@ onMounted(loadData);
 
           <!-- Order Items -->
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold mb-0">Order Items</h6>
+            <h6 class="fw-bold mb-0">
+              {{ t("salesOrders.orderItems") }}
+            </h6>
 
             <button
               type="button"
               class="btn btn-sm btn-outline-success"
               @click="addOrderItem"
             >
-              + Add Product
+              + {{ t("salesOrders.addProduct") }}
             </button>
           </div>
 
@@ -577,7 +658,9 @@ onMounted(loadData);
             class="order-item-box mb-3"
           >
             <div class="d-flex justify-content-between align-items-center mb-3">
-              <span class="fw-semibold small"> Product {{ index + 1 }} </span>
+              <span class="fw-semibold small">
+                {{ t("salesOrders.productNumber", { number: index + 1 }) }}
+              </span>
 
               <button
                 v-if="form.items.length > 1"
@@ -585,15 +668,19 @@ onMounted(loadData);
                 class="btn btn-sm btn-outline-danger"
                 @click="removeOrderItem(index)"
               >
-                Remove
+                {{ t("salesOrders.remove") }}
               </button>
             </div>
 
             <div class="mb-3">
-              <label class="form-label small">Finished Product</label>
+              <label class="form-label small">
+                {{ t("salesOrders.finishedProduct") }}
+              </label>
 
               <select v-model="entry.item_id" class="form-select" required>
-                <option value="" disabled>Select product</option>
+                <option value="" disabled>
+                  {{ t("salesOrders.selectProduct") }}
+                </option>
 
                 <option v-for="item in items" :key="item.id" :value="item.id">
                   {{ item.name }} ({{ item.sku }})
@@ -603,7 +690,10 @@ onMounted(loadData);
 
             <div class="row g-3">
               <div class="col-md-6">
-                <label class="form-label small">Quantity</label>
+                <label class="form-label small">
+                  {{ t("salesOrders.quantity") }}
+                </label>
+
                 <input
                   v-model.number="entry.quantity"
                   type="number"
@@ -615,7 +705,10 @@ onMounted(loadData);
               </div>
 
               <div class="col-md-6">
-                <label class="form-label small">Unit Price (₹)</label>
+                <label class="form-label small">
+                  {{ t("salesOrders.unitPrice") }}
+                </label>
+
                 <input
                   v-model.number="entry.unit_price"
                   type="number"
@@ -627,7 +720,10 @@ onMounted(loadData);
               </div>
 
               <div class="col-md-6">
-                <label class="form-label small">Discount (₹)</label>
+                <label class="form-label small">
+                  {{ t("salesOrders.discount") }}
+                </label>
+
                 <input
                   v-model.number="entry.discount_amount"
                   type="number"
@@ -638,7 +734,10 @@ onMounted(loadData);
               </div>
 
               <div class="col-md-6">
-                <label class="form-label small">GST Rate (%)</label>
+                <label class="form-label small">
+                  {{ t("salesOrders.gstRate") }}
+                </label>
+
                 <input
                   v-model.number="entry.tax_rate"
                   type="number"
@@ -652,7 +751,10 @@ onMounted(loadData);
             </div>
 
             <div class="text-end mt-3">
-              <span class="text-muted small">Line Total: </span>
+              <span class="text-muted small">
+                {{ t("salesOrders.lineTotal") }}:
+              </span>
+
               <strong>
                 {{ formatCurrency(calculatedItems[index]?.total) }}
               </strong>
@@ -661,46 +763,51 @@ onMounted(loadData);
 
           <!-- Notes -->
           <div class="mb-4">
-            <label class="form-label fw-semibold">Notes</label>
+            <label class="form-label fw-semibold">
+              {{ t("salesOrders.notes") }}
+            </label>
+
             <textarea
               v-model="form.notes"
               class="form-control"
               rows="2"
-              placeholder="Optional order notes"
-            >
-            </textarea>
+              :placeholder="t('salesOrders.notesPlaceholder')"
+            ></textarea>
           </div>
 
           <!-- Order Summary -->
           <div class="order-summary mb-4">
-            <h6 class="fw-bold mb-3">Order Summary</h6>
+            <h6 class="fw-bold mb-3">
+              {{ t("salesOrders.orderSummary") }}
+            </h6>
 
             <div class="d-flex justify-content-between mb-2">
-              <span>Subtotal</span>
+              <span>{{ t("salesOrders.subtotal") }}</span>
               <span>{{ formatCurrency(orderTotals.subtotal) }}</span>
             </div>
 
             <div class="d-flex justify-content-between mb-2">
-              <span>Discount</span>
+              <span>{{ t("salesOrders.discount") }}</span>
               <span>{{ formatCurrency(orderTotals.discount) }}</span>
             </div>
 
             <div class="d-flex justify-content-between mb-2">
-              <span>GST</span>
+              <span>{{ t("salesOrders.gst") }}</span>
               <span>{{ formatCurrency(orderTotals.tax) }}</span>
             </div>
 
             <hr />
 
             <div class="d-flex justify-content-between">
-              <strong>Total Amount</strong>
+              <strong>{{ t("salesOrders.totalAmount") }}</strong>
+
               <strong class="text-success fs-5">
                 {{ formatCurrency(orderTotals.total) }}
               </strong>
             </div>
 
             <p class="text-muted small mt-2 mb-0">
-              Final amounts are calculated and validated by the backend.
+              {{ t("salesOrders.backendCalculationNote") }}
             </p>
           </div>
 
@@ -716,11 +823,15 @@ onMounted(loadData);
               class="btn btn-light"
               @click="showModal = false"
             >
-              Cancel
+              {{ t("salesOrders.cancel") }}
             </button>
 
             <button type="submit" class="btn btn-success" :disabled="saving">
-              {{ saving ? "Creating..." : "Create Draft Order" }}
+              {{
+                saving
+                  ? t("salesOrders.creating")
+                  : t("salesOrders.createDraft")
+              }}
             </button>
           </div>
         </form>

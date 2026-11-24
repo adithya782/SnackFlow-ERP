@@ -1,6 +1,9 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
+import { useI18n } from "vue-i18n";
 import api from "../services/api";
+
+const { t } = useI18n();
 
 const purchases = ref([]);
 const suppliers = ref([]);
@@ -45,18 +48,21 @@ async function fetchData() {
     suppliers.value = supplierResponse.data.suppliers;
     items.value = itemResponse.data.items;
   } catch (err) {
-    error.value = err.response?.data?.message || "Failed to load purchases.";
+    error.value = err.response?.data?.message || t("purchases.loadError");
   } finally {
     loading.value = false;
   }
 }
 
 function openModal() {
+  error.value = "";
+
   form.value = {
     supplier_id: "",
     notes: "",
     items: [{ item_id: "", quantity: "", unit_price: "", gst_rate: 0 }],
   };
+
   showModal.value = true;
 }
 
@@ -96,14 +102,14 @@ async function createPurchase() {
     showModal.value = false;
     await fetchData();
   } catch (err) {
-    error.value = err.response?.data?.message || "Failed to create purchase.";
+    error.value = err.response?.data?.message || t("purchases.createError");
   } finally {
     saving.value = false;
   }
 }
 
 async function receivePurchase(purchase) {
-  if (!confirm("Mark this purchase as received? Inventory will increase.")) {
+  if (!confirm(t("purchases.confirmReceive"))) {
     return;
   }
 
@@ -112,9 +118,9 @@ async function receivePurchase(purchase) {
   try {
     await api.post(`/purchases/${purchase.id}/receive`);
     await fetchData();
-    alert("Purchase received successfully. Inventory updated!");
+    alert(t("purchases.receiveSuccess"));
   } catch (err) {
-    error.value = err.response?.data?.message || "Failed to receive purchase.";
+    error.value = err.response?.data?.message || t("purchases.receiveError");
   }
 }
 
@@ -130,6 +136,15 @@ function formatDate(value) {
   return new Date(value).toLocaleDateString("en-IN");
 }
 
+function formatStatus(status) {
+  const statuses = {
+    DRAFT: "purchases.statuses.draft",
+    RECEIVED: "purchases.statuses.received",
+  };
+
+  return statuses[status] ? t(statuses[status]) : status;
+}
+
 onMounted(fetchData);
 </script>
 
@@ -137,13 +152,15 @@ onMounted(fetchData);
   <div class="container-fluid py-3">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h3 class="fw-bold mb-1">Purchases</h3>
+        <h3 class="fw-bold mb-1">{{ t("purchases.title") }}</h3>
         <p class="text-muted mb-0">
-          Manage supplier purchases and incoming materials.
+          {{ t("purchases.subtitle") }}
         </p>
       </div>
 
-      <button class="btn btn-success" @click="openModal">+ New Purchase</button>
+      <button class="btn btn-success" @click="openModal">
+        + {{ t("purchases.newPurchase") }}
+      </button>
     </div>
 
     <div v-if="error" class="alert alert-danger">
@@ -155,32 +172,34 @@ onMounted(fetchData);
         <input
           v-model="searchQuery"
           class="form-control"
-          placeholder="Search by purchase number or supplier..."
+          :placeholder="t('purchases.searchPlaceholder')"
         />
       </div>
     </div>
 
     <div class="card border-0 shadow-sm">
       <div class="card-body">
-        <div v-if="loading" class="text-center py-5">Loading purchases...</div>
+        <div v-if="loading" class="text-center py-5">
+          {{ t("purchases.loading") }}
+        </div>
 
         <div
           v-else-if="filteredPurchases.length === 0"
           class="text-center py-5 text-muted"
         >
-          No purchase records found.
+          {{ t("purchases.noPurchases") }}
         </div>
 
         <div v-else class="table-responsive">
           <table class="table table-hover align-middle">
             <thead class="table-light">
               <tr>
-                <th>Purchase #</th>
-                <th>Supplier</th>
-                <th>Date</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Action</th>
+                <th>{{ t("purchases.purchaseNumber") }}</th>
+                <th>{{ t("purchases.supplier") }}</th>
+                <th>{{ t("purchases.date") }}</th>
+                <th>{{ t("purchases.total") }}</th>
+                <th>{{ t("purchases.status") }}</th>
+                <th>{{ t("purchases.action") }}</th>
               </tr>
             </thead>
 
@@ -209,7 +228,7 @@ onMounted(fetchData);
                         : 'bg-warning text-dark'
                     "
                   >
-                    {{ purchase.status }}
+                    {{ formatStatus(purchase.status) }}
                   </span>
                 </td>
 
@@ -219,10 +238,12 @@ onMounted(fetchData);
                     class="btn btn-sm btn-outline-success"
                     @click="receivePurchase(purchase)"
                   >
-                    Receive
+                    {{ t("purchases.receive") }}
                   </button>
 
-                  <span v-else class="text-success small"> ✓ Received </span>
+                  <span v-else class="text-success small">
+                    ✓ {{ t("purchases.received") }}
+                  </span>
                 </td>
               </tr>
             </tbody>
@@ -235,15 +256,24 @@ onMounted(fetchData);
     <div v-if="showModal" class="purchase-overlay">
       <div class="purchase-modal">
         <div class="d-flex justify-content-between align-items-center mb-4">
-          <h5 class="fw-bold mb-0">Create New Purchase</h5>
+          <h5 class="fw-bold mb-0">
+            {{ t("purchases.createNewPurchase") }}
+          </h5>
+
           <button class="btn-close" @click="showModal = false"></button>
         </div>
 
         <form @submit.prevent="createPurchase">
           <div class="mb-3">
-            <label class="form-label fw-semibold">Supplier</label>
+            <label class="form-label fw-semibold">
+              {{ t("purchases.supplier") }}
+            </label>
+
             <select v-model="form.supplier_id" class="form-select" required>
-              <option value="" disabled>Select Supplier</option>
+              <option value="" disabled>
+                {{ t("purchases.selectSupplier") }}
+              </option>
+
               <option
                 v-for="supplier in suppliers.filter((s) => s.is_active)"
                 :key="supplier.id"
@@ -257,13 +287,16 @@ onMounted(fetchData);
           <hr />
 
           <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="fw-bold mb-0">Purchase Items</h6>
+            <h6 class="fw-bold mb-0">
+              {{ t("purchases.purchaseItems") }}
+            </h6>
+
             <button
               type="button"
               class="btn btn-sm btn-outline-success"
               @click="addItem"
             >
-              + Add Item
+              + {{ t("purchases.addItem") }}
             </button>
           </div>
 
@@ -273,21 +306,30 @@ onMounted(fetchData);
             class="purchase-item mb-3"
           >
             <div class="d-flex justify-content-between mb-2">
-              <strong>Item {{ index + 1 }}</strong>
+              <strong>
+                {{ t("purchases.itemNumber", { number: index + 1 }) }}
+              </strong>
+
               <button
                 v-if="form.items.length > 1"
                 type="button"
                 class="btn btn-sm btn-outline-danger"
                 @click="removeItem(index)"
               >
-                Remove
+                {{ t("purchases.remove") }}
               </button>
             </div>
 
             <div class="mb-2">
-              <label class="form-label">Material / Item</label>
+              <label class="form-label">
+                {{ t("purchases.materialItem") }}
+              </label>
+
               <select v-model="item.item_id" class="form-select" required>
-                <option value="" disabled>Select Item</option>
+                <option value="" disabled>
+                  {{ t("purchases.selectItem") }}
+                </option>
+
                 <option
                   v-for="product in items.filter(
                     (p) => p.is_active && p.category !== 'FINISHED_GOOD',
@@ -302,7 +344,10 @@ onMounted(fetchData);
 
             <div class="row g-2">
               <div class="col-4">
-                <label class="form-label">Quantity</label>
+                <label class="form-label">
+                  {{ t("purchases.quantity") }}
+                </label>
+
                 <input
                   v-model="item.quantity"
                   type="number"
@@ -314,7 +359,10 @@ onMounted(fetchData);
               </div>
 
               <div class="col-4">
-                <label class="form-label">Rate (₹)</label>
+                <label class="form-label">
+                  {{ t("purchases.rate") }}
+                </label>
+
                 <input
                   v-model="item.unit_price"
                   type="number"
@@ -326,7 +374,10 @@ onMounted(fetchData);
               </div>
 
               <div class="col-4">
-                <label class="form-label">GST %</label>
+                <label class="form-label">
+                  {{ t("purchases.gstRate") }}
+                </label>
+
                 <input
                   v-model="item.gst_rate"
                   type="number"
@@ -340,11 +391,15 @@ onMounted(fetchData);
           </div>
 
           <div class="mb-3">
-            <label class="form-label fw-semibold">Notes (Optional)</label>
+            <label class="form-label fw-semibold">
+              {{ t("purchases.notes") }}
+            </label>
+
             <textarea
               v-model="form.notes"
               class="form-control"
               rows="2"
+              :placeholder="t('purchases.optional')"
             ></textarea>
           </div>
 
@@ -358,11 +413,11 @@ onMounted(fetchData);
               class="btn btn-light"
               @click="showModal = false"
             >
-              Cancel
+              {{ t("purchases.cancel") }}
             </button>
 
             <button type="submit" class="btn btn-success" :disabled="saving">
-              {{ saving ? "Saving..." : "Save Purchase" }}
+              {{ saving ? t("purchases.saving") : t("purchases.savePurchase") }}
             </button>
           </div>
         </form>
