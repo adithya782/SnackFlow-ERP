@@ -53,6 +53,23 @@ You can explore SnackFlow ERP using the following demonstration accounts.
 
 ## ✨ Features
 
+### 🌐 Bilingual Language Support
+
+SnackFlow ERP supports both **English and Tamil**, making the system more accessible to administrators, sales staff, and factory floor employees.
+
+Users can switch between languages instantly using the language selector. Their selected preference is saved in the browser and retained across visits.
+
+<p align="center">
+  <img src="./language-switch.svg" alt="Language Switch" />
+</p>
+
+- English as the default language.
+- Tamil language support across the application.
+- Instant language switching without reloading the page.
+- Language preference persisted using browser local storage.
+- Translated navigation, dashboards, forms, tables, and interface messages.
+- Business records, product names, numerical values, and calculations remain unchanged.
+
 ### 📦 Inventory Management
 
 - Manage raw materials and finished goods.
