@@ -264,7 +264,7 @@ SnackFlow-ERP/
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR-GITHUB-USERNAME/SnackFlow-ERP.git
+git clone https://github.com/adithya782/SnackFlow-ERP.git
 cd SnackFlow-ERP
 ```
 
