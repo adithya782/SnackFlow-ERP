@@ -77,24 +77,32 @@ const downloadReport = async (reportType, fileFormat) => {
       { responseType: "blob" },
     );
 
-    const mimeType =
-      fileFormat === "xlsx"
-        ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        : "text/csv;charset=utf-8";
+    const mimeTypes = {
+      xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      csv: "text/csv;charset=utf-8",
+      pdf: "application/pdf",
+    };
 
-    const blob = new Blob([response.data], { type: mimeType });
+    const fileNames = {
+      inventory: "SnackFlow_Stock_Report",
+      sales: "SnackFlow_Sales_Register",
+      production: "SnackFlow_Production_Report",
+    };
+
+    const blob = new Blob([response.data], {
+      type: mimeTypes[fileFormat],
+    });
+
     const downloadUrl = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
 
     link.href = downloadUrl;
-    link.download =
-      reportType === "inventory"
-        ? `SnackFlow_Stock_Report.${fileFormat}`
-        : `SnackFlow_Sales_Register.${fileFormat}`;
+    link.download = `${fileNames[reportType]}.${fileFormat}`;
 
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
     window.URL.revokeObjectURL(downloadUrl);
   } catch (err) {
     error.value = t("reports.downloadError", {
@@ -349,6 +357,13 @@ onMounted(loadReports);
             >
               {{ exporting === "sales-csv" ? t("reports.preparing") : "↓ CSV" }}
             </button>
+            <button
+              class="btn-export btn-export-secondary"
+              :disabled="!!exporting"
+              @click="downloadReport('sales', 'pdf')"
+            >
+              {{ exporting === "sales-pdf" ? t("reports.preparing") : "↓ PDF" }}
+            </button>
           </div>
         </div>
 
@@ -436,6 +451,15 @@ onMounted(loadReports);
                 exporting === "inventory-csv" ? t("reports.preparing") : "↓ CSV"
               }}
             </button>
+            <button
+              class="btn-export btn-export-secondary"
+              :disabled="!!exporting"
+              @click="downloadReport('inventory', 'pdf')"
+            >
+              {{
+                exporting === "inventory-pdf" ? t("reports.preparing") : "↓ PDF"
+              }}
+            </button>
           </div>
         </div>
 
@@ -503,6 +527,44 @@ onMounted(loadReports);
             <h4>{{ t("reports.productionTitle") }}</h4>
             <p>{{ t("reports.productionSubtitle") }}</p>
           </div>
+
+          <div class="export-actions">
+            <button
+              class="btn-export"
+              :disabled="!!exporting"
+              @click="downloadReport('production', 'xlsx')"
+            >
+              {{
+                exporting === "production-xlsx"
+                  ? t("reports.preparing")
+                  : "↓ Excel"
+              }}
+            </button>
+
+            <button
+              class="btn-export btn-export-secondary"
+              :disabled="!!exporting"
+              @click="downloadReport('production', 'csv')"
+            >
+              {{
+                exporting === "production-csv"
+                  ? t("reports.preparing")
+                  : "↓ CSV"
+              }}
+            </button>
+
+            <button
+              class="btn-export btn-export-secondary"
+              :disabled="!!exporting"
+              @click="downloadReport('production', 'pdf')"
+            >
+              {{
+                exporting === "production-pdf"
+                  ? t("reports.preparing")
+                  : "↓ PDF"
+              }}
+            </button>
+          </div>
         </div>
 
         <div class="financial-summary">
@@ -531,6 +593,10 @@ onMounted(loadReports);
                 <th>{{ t("reports.plannedOutput") }}</th>
                 <th>{{ t("reports.actualOutput") }}</th>
                 <th>{{ t("reports.materialCost") }}</th>
+                <th>{{ t("reports.labourCost") }}</th>
+                <th>{{ t("reports.gasPowerCost") }}</th>
+                <th>{{ t("reports.otherOverhead") }}</th>
+                <th>{{ t("reports.totalProductionCost") }}</th>
                 <th>{{ t("reports.costPerUnit") }}</th>
                 <th>{{ t("reports.status") }}</th>
               </tr>
@@ -546,7 +612,15 @@ onMounted(loadReports);
                 <td>{{ run.planned_output }}</td>
                 <td>{{ run.actual_output ?? "-" }}</td>
                 <td>{{ formatCurrency(run.material_cost) }}</td>
-                <td>{{ formatCurrency(run.cost_per_unit) }}</td>
+                <td>{{ formatCurrency(run.labour_cost) }}</td>
+                <td>{{ formatCurrency(run.gas_power_cost) }}</td>
+                <td>{{ formatCurrency(run.other_overhead) }}</td>
+                <td class="fw-semibold">
+                  {{ formatCurrency(run.total_production_cost) }}
+                </td>
+                <td class="fw-semibold">
+                  {{ formatCurrency(run.cost_per_unit) }}
+                </td>
                 <td>
                   <span
                     class="status-badge"
@@ -558,7 +632,7 @@ onMounted(loadReports);
               </tr>
 
               <tr v-if="production.production_runs.length === 0">
-                <td colspan="7" class="empty-state">
+                <td colspan="11" class="empty-state">
                   {{ t("reports.noProductionRuns") }}
                 </td>
               </tr>

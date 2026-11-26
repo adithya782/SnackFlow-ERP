@@ -1,4 +1,4 @@
-
+from app.models.production_overhead import ProductionOverhead
 from app.models.item import Item
 from app.services.inventory_service import get_item_stock
 from app.models.production_run import ProductionRun
@@ -69,6 +69,7 @@ def get_sales_report():
 
 
 
+
 def get_production_report():
     runs = ProductionRun.query.order_by(
         ProductionRun.production_date.desc()
@@ -81,6 +82,10 @@ def get_production_report():
             production_run_id=run.id
         ).all()
 
+        overheads = ProductionOverhead.query.filter_by(
+            production_run_id=run.id
+        ).all()
+
         material_cost = sum(
             (
                 Decimal(str(row.actual_quantity or 0))
@@ -90,8 +95,41 @@ def get_production_report():
             Decimal("0.00")
         )
 
+        labour_cost = sum(
+            (
+                Decimal(str(entry.amount))
+                for entry in overheads
+                if entry.category == "LABOUR"
+            ),
+            Decimal("0.00")
+        )
+
+        gas_power_cost = sum(
+            (
+                Decimal(str(entry.amount))
+                for entry in overheads
+                if entry.category == "GAS_POWER"
+            ),
+            Decimal("0.00")
+        )
+
+        other_overhead = sum(
+            (
+                Decimal(str(entry.amount))
+                for entry in overheads
+                if entry.category == "OTHER"
+            ),
+            Decimal("0.00")
+        )
+
+        total_overhead = (
+            labour_cost + gas_power_cost + other_overhead
+        )
+
+        total_production_cost = material_cost + total_overhead
+
         cost_per_unit = (
-            (material_cost / Decimal(str(run.actual_output))).quantize(
+            (total_production_cost / Decimal(str(run.actual_output))).quantize(
                 Decimal("0.01")
             )
             if run.actual_output and run.actual_output > 0
@@ -109,6 +147,11 @@ def get_production_report():
                 if run.actual_output is not None else None
             ),
             "material_cost": str(material_cost),
+            "labour_cost": str(labour_cost),
+            "gas_power_cost": str(gas_power_cost),
+            "other_overhead": str(other_overhead),
+            "total_overhead": str(total_overhead),
+            "total_production_cost": str(total_production_cost),
             "cost_per_unit": str(cost_per_unit)
         })
 
@@ -119,7 +162,6 @@ def get_production_report():
         ),
         "production_runs": report
     }
-
 
 def get_receivables_report():
     invoices = Invoice.query.filter_by(

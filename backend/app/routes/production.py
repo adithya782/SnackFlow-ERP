@@ -8,9 +8,12 @@ from app.models.item import Item
 from app.services.production_service import (
     create_production_run,
     update_actual_consumption,
-    complete_production
+    complete_production,
+    add_production_overhead,
+    get_production_overheads
 )
 from app.utils.decorators import role_required
+from app.models.production_overhead import ProductionOverhead
 
 
 production_bp = Blueprint(
@@ -202,3 +205,76 @@ def finish_production(run_id):
             "status": "error",
             "message": "An unexpected error occurred."
         }), 500
+
+
+# POST: Add production overhead
+@production_bp.route("/runs/<int:run_id>/overheads", methods=["POST"])
+@jwt_required()
+@role_required("ADMIN", "PRODUCTION", "ACCOUNTANT")
+def add_run_overhead(run_id):
+    data = request.get_json(silent=True) or {}
+
+    try:
+        user_id = int(get_jwt_identity())
+
+        overhead = add_production_overhead(
+            run_id, data, user_id
+        )
+
+        db.session.commit()
+
+        return jsonify({
+            "status": "success",
+            "message": "Production overhead recorded successfully.",
+            "overhead": {
+                "id": overhead.id,
+                "production_run_id": overhead.production_run_id,
+                "category": overhead.category,
+                "amount": str(overhead.amount),
+                "description": overhead.description
+            }
+        }), 201
+
+    except (ValueError, TypeError) as error:
+        db.session.rollback()
+        return jsonify({
+            "status": "error",
+            "message": str(error)
+        }), 400
+
+    except Exception:
+        db.session.rollback()
+        return jsonify({
+            "status": "error",
+            "message": "An unexpected error occurred."
+        }), 500
+
+
+# GET: List overheads for a production run
+@production_bp.route("/runs/<int:run_id>/overheads", methods=["GET"])
+@jwt_required()
+@role_required("ADMIN", "PRODUCTION", "ACCOUNTANT")
+def list_run_overheads(run_id):
+    try:
+        overheads = get_production_overheads(run_id)
+
+        return jsonify({
+            "status": "success",
+            "count": len(overheads),
+            "overheads": [
+                {
+                    "id": entry.id,
+                    "production_run_id": entry.production_run_id,
+                    "category": entry.category,
+                    "amount": str(entry.amount),
+                    "description": entry.description
+                }
+                for entry in overheads
+            ]
+        }), 200
+
+    except ValueError as error:
+        return jsonify({
+            "status": "error",
+            "message": str(error)
+        }), 404

@@ -16,7 +16,7 @@ from app.services.inventory_service import (
     get_item_stock,
     record_stock_movement
 )
-
+from app.models.production_overhead import ProductionOverhead
 
 def to_decimal(value, field_name):
     try:
@@ -260,3 +260,56 @@ def complete_production(production_run_id, user_id):
         "production_run": production_run,
         "total_material_cost": total_material_cost
     }
+
+
+def add_production_overhead(production_run_id, data, user_id):
+    production_run = db.session.get(
+        ProductionRun, production_run_id
+    )
+
+    if not production_run:
+        raise ValueError("Production run not found.")
+
+    if production_run.status != "COMPLETED":
+        raise ValueError(
+            "Overheads can only be recorded for completed production runs."
+        )
+
+    category = str(data.get("category", "")).strip().upper()
+
+    allowed_categories = {"LABOUR", "GAS_POWER", "OTHER"}
+
+    if category not in allowed_categories:
+        raise ValueError(
+            "Invalid category. Use LABOUR, GAS_POWER or OTHER."
+        )
+
+    amount = to_decimal(data.get("amount"), "overhead amount")
+
+    if amount <= 0:
+        raise ValueError("Overhead amount must be positive.")
+
+    overhead = ProductionOverhead(
+        production_run_id=production_run.id,
+        category=category,
+        amount=amount,
+        description=data.get("description"),
+        created_by=user_id
+    )
+
+    db.session.add(overhead)
+
+    return overhead
+
+
+def get_production_overheads(production_run_id):
+    production_run = db.session.get(
+        ProductionRun, production_run_id
+    )
+
+    if not production_run:
+        raise ValueError("Production run not found.")
+
+    return ProductionOverhead.query.filter_by(
+        production_run_id=production_run_id
+    ).order_by(ProductionOverhead.id.asc()).all()

@@ -112,7 +112,7 @@
     "loadError": "Failed to load inventory.",
     "movementLoadError": "Failed to load stock movement history.",
     "references": {
-      "opening": "Opening",
+      "opening": "Opening Stock",
       "purchase": "Purchase",
       "production": "Production",
       "dispatch": "Dispatch",
@@ -286,6 +286,7 @@
     "completing": "Completing...",
     "complete": "Complete",
     "completed": "Completed",
+    "costingExpenses": "Costing / Expenses",
     "noActions": "No actions",
     "startProduction": "Start Production",
     "startSubtitle": "Create a manufacturing run using an existing BOM.",
@@ -324,7 +325,34 @@
       "inProgress": "In Progress",
       "completed": "Completed",
       "cancelled": "Cancelled"
-    }
+    },
+    "costingTitle": "Production Costing",
+    "recordedExpenses": "Recorded Expenses",
+    "noExpenses": "No additional expenses recorded for this run.",
+    "category": "Category",
+    "amount": "Amount",
+    "description": "Description",
+    "addExpense": "Add Production Expense",
+    "expenseCategory": "Expense Category",
+    "labour": "Labour",
+    "gasPower": "Gas / Power",
+    "other": "Other",
+    "enterAmount": "Enter amount",
+    "optionalDescription": "Optional description",
+    "savingExpense": "Saving...",
+    "saveExpense": "Add Expense",
+    "costSummary": "Production Cost Summary",
+    "materialCost": "Material Cost",
+    "labourCost": "Labour Cost",
+    "gasPowerCost": "Gas / Power Cost",
+    "otherOverhead": "Other Overheads",
+    "totalProductionCost": "Total Production Cost",
+    "costPerPacket": "Cost Per Packet",
+    "loadingCosting": "Loading costing details...",
+    "costUnavailable": "Cost summary is not available.",
+    "invalidExpenseAmount": "Enter a valid expense amount.",
+    "loadCostingError": "Failed to load production costing data.",
+    "saveExpenseError": "Failed to record production expense."
   },
 
   "salesOrders": {
@@ -644,7 +672,11 @@
       "planned": "Planned",
       "inProgress": "In Progress",
       "cancelled": "Cancelled"
-    }
+    },
+    "labourCost": "Labour Cost",
+    "gasPowerCost": "Gas / Power Cost",
+    "otherOverhead": "Other Overheads",
+    "totalProductionCost": "Total Production Cost"
   },
 
   "employees": {

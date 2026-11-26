@@ -88,6 +88,8 @@ Users can switch between languages instantly using the language selector. Their 
 - Plan production based on material requirements.
 - Record actual material consumption and production output.
 - Track production variance and product costs.
+- Record additional production expenses, including labour, gas/power, and other overheads.
+- Calculate total production cost and cost per finished unit.
 
 ### 💼 Sales Management
 
@@ -109,10 +111,11 @@ Users can switch between languages instantly using the language selector. Their 
 
 ### 📊 Reports & Dashboard
 
-- Sales reports.
-- Inventory reports.
-- Production reports.
-- Receivables reports.
+- Sales reports with invoice-wise details and sales summaries.
+- Inventory reports with stock levels, reorder levels, and low-stock indicators.
+- Production reports with planned output, actual output, material costs, overheads, and cost per unit.
+- Receivables reports with payment and outstanding balance details.
+- Export Inventory, Sales, and Production reports in Excel (.xlsx), CSV (.csv), and PDF (.pdf) formats.
 - Role-specific dashboards.
 
 ### 🔐 Authentication & Access Control

@@ -104,11 +104,11 @@ function formatMovementType(type) {
 
 function formatReferenceType(type) {
   const translations = {
-    OPENING: "references.opening",
-    PURCHASE: "references.purchase",
-    PRODUCTION: "references.production",
-    DISPATCH: "references.dispatch",
-    ADJUSTMENT: "references.adjustment",
+    OPENING: "inventory.references.opening",
+    PURCHASE: "inventory.references.purchase",
+    PRODUCTION: "inventory.references.production",
+    DISPATCH: "inventory.references.dispatch",
+    ADJUSTMENT: "inventory.references.adjustment",
   };
 
   return translations[type]

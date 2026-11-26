@@ -69,6 +69,7 @@ The database uses a relational model with primary keys and foreign-key relations
 | BOMs / BOM Items               | Product recipes and material requirements              |
 | Purchases / Purchase Items     | Purchase records and received materials                |
 | Production Runs / Consumptions | Planned production, actual consumption, and output     |
+| Production Overheads           | Labour, gas/power, and other production expenses       |
 | Stock Movements                | Inventory transaction history                          |
 | Sales Orders / Order Items     | Customer orders and their products                     |
 | Invoices / Invoice Items       | Invoice records and line items                         |
@@ -150,6 +151,15 @@ erDiagram
         int item_id FK
         decimal actual_quantity
     }
+    PRODUCTION_OVERHEADS {
+    int id PK
+    int production_run_id FK
+    int created_by FK
+    string category
+    decimal amount
+    string description
+    datetime created_at
+}
 
     STOCK_MOVEMENTS {
         int id PK
@@ -224,6 +234,8 @@ erDiagram
 
     BOMS ||--o{ PRODUCTION_RUNS : used_for
     PRODUCTION_RUNS ||--o{ PRODUCTION_CONSUMPTIONS : records
+    PRODUCTION_RUNS ||--o{ PRODUCTION_OVERHEADS : records
+    USERS o|--o{ PRODUCTION_OVERHEADS : records
     ITEMS ||--o{ PRODUCTION_CONSUMPTIONS : consumed
 
     ITEMS ||--o{ STOCK_MOVEMENTS : tracks
@@ -313,27 +325,65 @@ This allows production personnel and administrators to identify material overcon
 
 ## 4. Costing Methodology
 
-The costing approach focuses on direct material consumption.
+SnackFlow calculates production costs using actual material consumption and additional production expenses recorded against completed production runs.
 
-**Direct Material Cost = Σ (Actual Material Quantity × Applicable Unit Cost)**
+### Material Cost Calculation
 
-**Material Cost per Good Unit = Total Direct Material Cost / Good Finished Units Produced**
+The system uses the weighted-average purchase cost of received purchase records to determine the applicable unit cost of each material.
 
-Purchase records provide material quantity and unit-price information. The applicable material unit cost must follow the valuation method implemented in the application.
+**Weighted Average Unit Cost = Total Purchase Value / Total Received Quantity**
 
-Labour, electricity, gas, and other overhead costs should be considered separately when estimating total manufacturing cost. The material-cost calculation alone is not a complete manufacturing cost or statutory inventory valuation.
+**Direct Material Cost = Σ (Actual Material Quantity × Weighted Average Unit Cost)**
+
+This approach accounts for differences in purchase prices across received purchases.
+
+### Production Overheads
+
+Additional expenses can be recorded against completed production runs under the following categories:
+
+- Labour.
+- Gas and power.
+- Other production expenses.
+
+Each overhead entry stores its category, amount, description, production run reference, and recording user where applicable.
+
+### Total Production Cost
+
+The system combines direct material costs and recorded overheads to calculate the total production cost.
+
+**Total Overheads = Labour Cost + Gas/Power Cost + Other Overheads**
+
+**Total Production Cost = Direct Material Cost + Total Overheads**
+
+### Cost Per Finished Unit
+
+The cost per unit is calculated using the actual finished output of the production run.
+
+**Cost Per Unit = Total Production Cost / Actual Finished Output**
+
+This provides a per-unit production cost that includes both material consumption and recorded production overheads.
+
+The costing report displays material cost, individual overhead categories, total production cost, and cost per unit for each production run.
 
 ---
 
-## 5. Security and Design Assumptions
+## 5. Reporting and Data Export
 
-- JWT-based authentication protects application endpoints.
-- Role-based access control distinguishes ADMIN, SALESMAN, PRODUCTION, and ACCOUNTANT users.
-- Passwords are stored using secure password hashing.
-- Customers and suppliers are business records, not application roles.
-- The current deployment follows a single-tenant model, supporting one manufacturing organization per deployment.
-- English is the default interface language; Tamil is available through the language selector. The selected preference is persisted in browser local storage.
-- Business records and database values remain unchanged when switching interface languages.
-- Inventory, production, sales, invoicing, dispatch, and payment operations are maintained as separate transactional workflows.
+SnackFlow provides operational and financial reports to help users monitor business activities and production performance.
 
-**Project Scope:** SnackFlow ERP connects procurement, inventory, manufacturing, sales, invoicing, dispatch, and payment management in a centralized system designed for a small-scale packaged snacks manufacturer.
+The system supports the following reports:
+
+- **Inventory Report:** Displays item details, current stock, reorder levels, and stock status.
+- **Sales Report:** Provides invoice-wise sales information, customer details, invoice amounts, and sales summaries.
+- **Production Report:** Displays production runs, planned and actual output, material costs, overhead expenses, total production cost, and cost per unit.
+- **Receivables Report:** Tracks invoice totals, payments received, and outstanding balances.
+
+### Export Formats
+
+Inventory, Sales, and Production reports support three export formats:
+
+- Excel (`.xlsx`)
+- Comma-Separated Values (`.csv`)
+- Portable Document Format (`.pdf`)
+
+These exports allow users to download and review operational and financial information outside the application.

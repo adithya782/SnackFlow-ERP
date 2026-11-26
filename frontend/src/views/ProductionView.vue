@@ -12,6 +12,18 @@ const saving = ref(false);
 const completingRunId = ref(null);
 const showModal = ref(false);
 const showActualsModal = ref(false);
+const showCostModal = ref(false);
+const costLoading = ref(false);
+const costSaving = ref(false);
+
+const overheads = ref([]);
+const productionCost = ref(null);
+
+const overheadForm = ref({
+  category: "LABOUR",
+  amount: "",
+  description: "",
+});
 const error = ref("");
 const modalError = ref("");
 const selectedRun = ref(null);
@@ -26,6 +38,11 @@ const actualForm = ref({
   consumptions: [],
 });
 
+const selectedRunCost = computed(() =>
+  productionCost.value?.production_runs?.find(
+    (run) => run.production_run_id === selectedRun.value?.id,
+  ),
+);
 const selectedBom = computed(() =>
   boms.value.find((bom) => bom.id === Number(form.value.bom_id)),
 );
@@ -162,6 +179,79 @@ async function saveActuals() {
     saving.value = false;
   }
 }
+
+const openCosting = async (run) => {
+  selectedRun.value = run;
+  overheadForm.value = {
+    category: "LABOUR",
+    amount: "",
+    description: "",
+  };
+
+  modalError.value = "";
+  showCostModal.value = true;
+  costLoading.value = true;
+
+  try {
+    await fetchCostingData(run.id);
+  } catch (err) {
+    modalError.value =
+      err.response?.data?.message || "Failed to load production costing.";
+  } finally {
+    costLoading.value = false;
+  }
+};
+
+const fetchCostingData = async (runId) => {
+  costLoading.value = true;
+  modalError.value = "";
+
+  try {
+    const [overheadResponse, reportResponse] = await Promise.all([
+      api.get(`/production/runs/${runId}/overheads`),
+      api.get("/reports/production"),
+    ]);
+
+    overheads.value = overheadResponse.data.overheads || [];
+    productionCost.value = reportResponse.data;
+  } catch (err) {
+    modalError.value =
+      err.response?.data?.message || "Failed to load production costing data.";
+  } finally {
+    costLoading.value = false;
+  }
+};
+
+const saveOverhead = async () => {
+  if (!overheadForm.value.amount || Number(overheadForm.value.amount) <= 0) {
+    modalError.value = "Enter a valid expense amount.";
+    return;
+  }
+
+  costSaving.value = true;
+  modalError.value = "";
+
+  try {
+    await api.post(`/production/runs/${selectedRun.value.id}/overheads`, {
+      category: overheadForm.value.category,
+      amount: Number(overheadForm.value.amount),
+      description: overheadForm.value.description,
+    });
+
+    overheadForm.value = {
+      category: "LABOUR",
+      amount: "",
+      description: "",
+    };
+
+    await fetchCostingData(selectedRun.value.id);
+  } catch (err) {
+    modalError.value =
+      err.response?.data?.message || "Failed to record production expense.";
+  } finally {
+    costSaving.value = false;
+  }
+};
 
 // Complete production and update inventory
 async function completeProduction(run) {
@@ -323,13 +413,13 @@ onMounted(async () => {
                     }}
                   </button>
 
-                  <span
+                  <button
                     v-else-if="run.status === 'COMPLETED'"
-                    class="text-success small fw-semibold"
+                    class="btn btn-sm btn-outline-primary"
+                    @click="openCosting(run)"
                   >
-                    <i class="bi bi-check-circle"></i>
-                    {{ t("production.completed") }}
-                  </span>
+                    {{ t("production.costingExpenses") }}
+                  </button>
 
                   <span v-else class="text-muted small">
                     {{ t("production.noActions") }}
@@ -577,6 +667,195 @@ onMounted(async () => {
         </form>
       </div>
     </div>
+
+    <!-- Production Costing Modal -->
+    <div v-if="showCostModal" class="production-overlay">
+      <div class="production-modal costing-modal">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">{{ t("production.costingTitle") }}</h5>
+          <button class="btn-close" @click="showCostModal = false"></button>
+        </div>
+
+        <p class="text-muted small">
+          {{ t("production.runNumber") }}:
+          {{ selectedRun?.run_number || `#${selectedRun?.id}` }}
+        </p>
+
+        <div v-if="costLoading" class="text-center py-4">
+          <div class="spinner-border text-primary"></div>
+          <p class="mt-2 mb-0">{{ t("production.loadingCosting") }}</p>
+        </div>
+
+        <div v-else>
+          <div v-if="modalError" class="alert alert-danger">
+            {{ modalError }}
+          </div>
+
+          <h6 class="fw-semibold mb-3">
+            {{ t("production.recordedExpenses") }}
+          </h6>
+
+          <div v-if="overheads.length === 0" class="text-muted small mb-3">
+            {{ t("production.noExpenses") }}
+          </div>
+
+          <div v-else class="table-responsive mb-4">
+            <table class="table table-sm table-bordered align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>{{ t("production.category") }}</th>
+                  <th>{{ t("production.amount") }}</th>
+                  <th>{{ t("production.description") }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="entry in overheads" :key="entry.id">
+                  <td>
+                    {{
+                      entry.category === "LABOUR"
+                        ? t("production.labour")
+                        : entry.category === "GAS_POWER"
+                          ? t("production.gasPower")
+                          : t("production.other")
+                    }}
+                  </td>
+                  <td>₹{{ Number(entry.amount).toFixed(2) }}</td>
+                  <td>{{ entry.description || "—" }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <hr />
+
+          <h6 class="fw-semibold mb-3">
+            {{ t("production.addExpense") }}
+          </h6>
+
+          <form @submit.prevent="saveOverhead">
+            <div class="mb-3">
+              <label class="form-label">
+                {{ t("production.expenseCategory") }}
+              </label>
+              <select
+                v-model="overheadForm.category"
+                class="form-select"
+                required
+              >
+                <option value="LABOUR">{{ t("production.labour") }}</option>
+                <option value="GAS_POWER">
+                  {{ t("production.gasPower") }}
+                </option>
+                <option value="OTHER">{{ t("production.other") }}</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">
+                {{ t("production.amount") }} (₹)
+              </label>
+              <input
+                v-model="overheadForm.amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                class="form-control"
+                :placeholder="t('production.enterAmount')"
+                required
+              />
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">
+                {{ t("production.description") }}
+              </label>
+              <input
+                v-model="overheadForm.description"
+                type="text"
+                class="form-control"
+                :placeholder="t('production.optionalDescription')"
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="costSaving"
+            >
+              {{
+                costSaving
+                  ? t("production.savingExpense")
+                  : t("production.saveExpense")
+              }}
+            </button>
+          </form>
+
+          <hr />
+
+          <h6 class="fw-semibold mb-3">
+            {{ t("production.costSummary") }}
+          </h6>
+
+          <div v-if="selectedRunCost">
+            <div class="d-flex justify-content-between mb-2">
+              <span>{{ t("production.materialCost") }}</span>
+              <strong
+                >₹{{ Number(selectedRunCost.material_cost).toFixed(2) }}</strong
+              >
+            </div>
+
+            <div class="d-flex justify-content-between mb-2">
+              <span>{{ t("production.labourCost") }}</span>
+              <strong
+                >₹{{ Number(selectedRunCost.labour_cost).toFixed(2) }}</strong
+              >
+            </div>
+
+            <div class="d-flex justify-content-between mb-2">
+              <span>{{ t("production.gasPowerCost") }}</span>
+              <strong
+                >₹{{
+                  Number(selectedRunCost.gas_power_cost).toFixed(2)
+                }}</strong
+              >
+            </div>
+
+            <div class="d-flex justify-content-between mb-2">
+              <span>{{ t("production.otherOverhead") }}</span>
+              <strong
+                >₹{{
+                  Number(selectedRunCost.other_overhead).toFixed(2)
+                }}</strong
+              >
+            </div>
+
+            <hr />
+
+            <div class="d-flex justify-content-between mb-2">
+              <span class="fw-semibold">
+                {{ t("production.totalProductionCost") }}
+              </span>
+              <strong class="text-primary">
+                ₹{{ Number(selectedRunCost.total_production_cost).toFixed(2) }}
+              </strong>
+            </div>
+
+            <div class="d-flex justify-content-between">
+              <span class="fw-semibold">
+                {{ t("production.costPerPacket") }}
+              </span>
+              <strong class="text-success fs-5">
+                ₹{{ Number(selectedRunCost.cost_per_unit).toFixed(2) }}
+              </strong>
+            </div>
+          </div>
+
+          <div v-else class="text-muted small">
+            {{ t("production.costUnavailable") }}
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -606,7 +885,12 @@ onMounted(async () => {
 .actuals-modal {
   max-width: 760px;
 }
-
+.costing-modal {
+  max-width: 800px;
+  width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
 .production-modal .form-label {
   color: #343a40;
   font-size: 14px;

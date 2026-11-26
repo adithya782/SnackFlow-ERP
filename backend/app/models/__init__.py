@@ -26,3 +26,5 @@ from app.models.payment_allocation import PaymentAllocation
 from app.models.audit_log import AuditLog
 
 from app.models.company_settings import CompanySettings
+
+from app.models.production_overhead import ProductionOverhead
