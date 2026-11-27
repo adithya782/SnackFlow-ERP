@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import get_jwt_identity, jwt_required
+from app.models.supplier import Supplier
 
 from app import db
 from app.models.purchase import Purchase
@@ -30,6 +31,7 @@ def serialize_purchase(purchase):
     items = PurchaseItem.query.filter_by(
         purchase_id=purchase.id
     ).all()
+    supplier = db.session.get(Supplier, purchase.supplier_id)
 
     return {
         "id": purchase.id,
@@ -47,7 +49,8 @@ def serialize_purchase(purchase):
             purchase.created_at.isoformat()
             if purchase.created_at else None
         ),
-        "items": [serialize_purchase_item(item) for item in items]
+        "items": [serialize_purchase_item(item) for item in items],
+        "supplier_name": supplier.business_name if supplier else None,
     }
 
 

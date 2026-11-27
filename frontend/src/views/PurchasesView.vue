@@ -93,7 +93,7 @@ async function createPurchase() {
         item_id: Number(item.item_id),
         quantity: Number(item.quantity),
         unit_price: Number(item.unit_price),
-        gst_rate: Number(item.gst_rate),
+        tax_rate: Number(item.gst_rate),
       })),
     };
 
@@ -217,7 +217,7 @@ onMounted(fetchData);
                   }}
                 </td>
 
-                <td>{{ formatCurrency(purchase.grand_total) }}</td>
+                <td>{{ formatCurrency(purchase.total_amount) }}</td>
 
                 <td>
                   <span
