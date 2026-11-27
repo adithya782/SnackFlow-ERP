@@ -222,9 +222,12 @@ def complete_production(production_run_id, user_id):
         )
 
         # Calculate weighted average purchase cost.
-        unit_cost = get_average_purchase_cost(
-            consumption.material_item_id
-        )
+        unit_cost = Decimal(str(consumption.unit_cost or 0))
+
+        if unit_cost <= 0:
+            unit_cost = get_average_purchase_cost(
+                consumption.material_item_id
+            )
 
         consumption.unit_cost = unit_cost
 
