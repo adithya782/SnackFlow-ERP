@@ -20,10 +20,11 @@ A role-based Enterprise Resource Planning (ERP) system designed for small-scale 
 
 ## 🚀 Live Demo
 
-| Component               | Link                                                             |
-| ----------------------- | ---------------------------------------------------------------- |
-| 🌐 Frontend Application | [SnackFlow ERP](https://snackflow-frontend.onrender.com/)        |
-| ⚙️ Backend Health Check | [API Status](https://snackflow-erp-jyjh.onrender.com/api/health) |
+| Component               | Link                                                                                                       |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 🌐 Frontend Application | [SnackFlow ERP](https://snackflow-frontend.onrender.com/)                                                  |
+| ⚙️ Backend Health Check | [API Status](https://snackflow-erp-jyjh.onrender.com/api/health)                                           |
+| 🎥 Demo Video           | [Benchmark test video](https://drive.google.com/file/d/1x8UrUCuf-ZBXvL6W9-ictzx6auWp5lGU/view?usp=sharing) |
 
 > **Note:** The application is hosted on Render's free tier. The backend may take a little time to wake up after inactivity.
 
@@ -33,12 +34,12 @@ A role-based Enterprise Resource Planning (ERP) system designed for small-scale 
 
 You can explore SnackFlow ERP using the following demonstration accounts.
 
-| Role                  | Email                      | Password             |
-| --------------------- | -------------------------- | -------------------- |
-| 👑 Admin              | `admin@snackflow.com`      | `password`           |
-| 🛍️ Sales Executive    | `sales@snackflow.com`      | `SnackFlow@Demo2026` |
-| 🏭 Production Manager | `production@snackflow.com` | `SnackFlow@Demo2026` |
-| 💳 Accountant         | `accounts@snackflow.com`   | `SnackFlow@Demo2026` |
+| Role                  | Email                      | Password   |
+| --------------------- | -------------------------- | ---------- |
+| 👑 Admin              | `admin@snackflow.com`      | `password` |
+| 🛍️ Sales Executive    | `sales@snackflow.com`      | `password` |
+| 🏭 Production Manager | `production@snackflow.com` | `password` |
+| 💳 Accountant         | `accounts@snackflow.com`   | `password` |
 
 ### 👀 What can you explore?
 
@@ -343,6 +344,181 @@ npm run dev
 ```
 
 Open the local URL displayed by Vite.
+
+### 4. Initial Business & Inventory Configuration
+
+After starting the backend and frontend, configure the initial business information, inventory items, opening stock, and Bill of Materials (BOM).
+
+The following configuration is used for the sample SnackFlow manufacturing setup. You can replace these values with your own business information.
+
+#### 4.1 Configure Manufacturer Details
+
+Open PostgreSQL:
+
+```bash
+psql -U postgres -d snackflow
+```
+
+Check whether company settings already exist:
+
+```sql
+SELECT * FROM company_settings;
+```
+
+If the table is empty, insert the initial manufacturer details:
+
+```sql
+INSERT INTO company_settings (
+    business_name,
+    gstin,
+    address,
+    city,
+    state,
+    pincode,
+    phone,
+    email
+)
+VALUES (
+    'SnackFlow',
+    NULL,
+    'Industrial Estate',
+    'Chennai',
+    'Tamil Nadu',
+    '600001',
+    '9876543210',
+    'admin@snackflow.com'
+);
+```
+
+Replace the sample address and contact information with your actual business details.
+
+> Note: GSTIN is optional for this demonstration. Use a valid GSTIN when configuring an actual registered business.
+
+#### 4.2 Create Inventory Items
+
+Navigate to **Inventory → Items** and create the following inventory items.
+
+| Item            | SKU           | Category       | Unit    | Opening Quantity |
+| --------------- | ------------- | -------------- | ------- | ---------------: |
+| Flour           | RM-FLOUR-001  | Raw Material   | kg      |              100 |
+| Cooking Oil     | RM-OIL-001    | Raw Material   | L       |               30 |
+| Spice Mix       | RM-SPICE-001  | Raw Material   | kg      |                5 |
+| Packaging Pouch | PK-POUCH-001  | Packaging      | pcs     |              500 |
+| Shipping Carton | PK-CARTON-001 | Packaging      | pcs     |               30 |
+| Murukku 200g    | FG-MUR-200    | Finished Goods | packets |               50 |
+
+Sample unit costs:
+
+| Item            | Unit Cost |
+| --------------- | --------: |
+| Flour           |    ₹42/kg |
+| Cooking Oil     |    ₹140/L |
+| Spice Mix       |   ₹200/kg |
+| Packaging Pouch |  ₹2.50/pc |
+| Shipping Carton |    ₹15/pc |
+
+Configure appropriate unit costs and reorder levels while creating the items.
+
+#### 4.3 Record Opening Stock
+
+Creating inventory items does not automatically establish their opening stock balances.
+
+After creating the items, record their opening stock using the inventory functionality.
+
+Use the following quantities:
+
+- Flour: 100 kg
+- Cooking Oil: 30 L
+- Spice Mix: 5 kg
+- Packaging Pouch: 500 pcs
+- Shipping Carton: 30 pcs
+- Murukku 200g: 50 packets
+
+Opening stock should be recorded as an `IN` inventory movement with the reference type `OPENING`.
+
+To verify inventory balances, execute:
+
+```sql
+SELECT
+    i.name,
+    i.sku,
+    i.unit,
+    i.current_stock
+FROM items i
+ORDER BY i.id;
+```
+
+> Important: Record opening stock only once for each item. Do not manually update stock balances through SQL after recording opening inventory movements.
+
+#### 4.4 Create the Bill of Materials (BOM)
+
+Navigate to **Production → Bill of Materials** and configure a BOM for the finished product **Murukku 200g**.
+
+Use the following sample production configuration:
+
+| Field            |        Value |
+| ---------------- | -----------: |
+| Finished Product | Murukku 200g |
+| Batch Output     |  200 packets |
+| Flour            |        40 kg |
+| Cooking Oil      |         10 L |
+| Spice Mix        |       1.2 kg |
+| Packaging Pouch  |      200 pcs |
+| Shipping Carton  |       10 pcs |
+
+Save the BOM and verify that all five components are associated with the finished product.
+
+> The BOM defines standard material consumption for a production batch. Actual consumption should be recorded through the production workflow.
+
+#### 4.5 Configure Product Pricing and GST
+
+Configure the finished product with the following sample values:
+
+| Configuration       |          Value |
+| ------------------- | -------------: |
+| Product             |   Murukku 200g |
+| Selling Price       | ₹50 per packet |
+| GST Rate            |             5% |
+| Manufacturing State |     Tamil Nadu |
+
+For this demonstration, the GST rate is assumed to be 5%.
+
+#### 4.6 Verify Initial Configuration
+
+Before proceeding with business transactions, verify the following:
+
+- [ ] Manufacturer details are configured.
+- [ ] All six inventory items are created.
+- [ ] Opening stock is recorded for all items.
+- [ ] Inventory balances are correct.
+- [ ] Opening stock movements are visible in the inventory ledger.
+- [ ] Murukku 200g BOM is created.
+- [ ] All five BOM components are configured.
+- [ ] Finished product selling price is configured.
+- [ ] GST rate is configured.
+
+### 5. Starting with Business Operations
+
+Once the initial configuration is complete, you can start using the ERP system.
+
+Recommended workflow:
+
+1. Create suppliers and retailers.
+2. Record purchase orders and purchases.
+3. Update inventory through purchase transactions.
+4. Record production using the configured BOM.
+5. Monitor raw material consumption and finished goods inventory.
+6. Create sales orders and invoices.
+7. Record customer payments.
+8. Allocate payments against outstanding invoices.
+9. Generate inventory, production, sales, and financial reports.
+
+**Important:**
+
+- Do not record opening stock multiple times.
+- Use the application workflows for inventory changes instead of directly modifying database balances.
+- Ensure that master data and BOM configurations are completed before starting production.
+- The quantities provided above are sample initial balances for demonstration purposes.
 
 ---
 
