@@ -31,7 +31,11 @@ const filteredPurchases = computed(() => {
         .includes(searchQuery.value.toLowerCase()),
   );
 });
-
+const supplierMap = computed(() => {
+  return Object.fromEntries(
+    suppliers.value.map((supplier) => [supplier.id, supplier.business_name]),
+  );
+});
 async function fetchData() {
   loading.value = true;
   error.value = "";
@@ -209,7 +213,13 @@ onMounted(fetchData);
                   {{ purchase.purchase_number || `PUR-${purchase.id}` }}
                 </td>
 
-                <td>{{ purchase.supplier_name || "-" }}</td>
+                <td>
+                  {{
+                    purchase.supplier_name ||
+                    supplierMap[purchase.supplier_id] ||
+                    "-"
+                  }}
+                </td>
 
                 <td>
                   {{
